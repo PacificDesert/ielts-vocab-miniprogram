@@ -195,8 +195,8 @@ body{
     </ul>
     <h2>和真机的差异</h2>
     <ul>
-      <li>真机需用<b>微信开发者工具</b>打开工程运行</li>
-      <li>章节配图用相对路径加载，独立打开可能不显示</li>
+      <li>真机需用<b>微信开发者工具</b>打开工程运行，这里只是同一套界面的复刻</li>
+      <li>章节配图已内联进本页，无需联网</li>
       <li>云端同步按钮在预览里是禁用状态（没有云环境）</li>
       <li>真机发音走有道词典接口，预览里用系统语音代替</li>
     </ul>
@@ -204,8 +204,10 @@ body{
 </div>
 
 <script id="words" type="application/json">__WORDS__</script>
+<script id="theme" type="application/json">__THEME__</script>
 <script>
 const DATA = JSON.parse(document.getElementById('words').textContent);
+const THEME = JSON.parse(document.getElementById('theme').textContent);
 const WORDS = DATA.list;
 const CHAPTERS = DATA.chapters;
 const byWord = {};
@@ -448,10 +450,7 @@ function search(kw) {
 }
 
 function themeImg(ch) {
-  const i = CHAPTERS.indexOf(ch);
-  if (i < 0) return '';
-  const n = i + 1;
-  return '../images/theme/' + (n < 10 ? '0' + n : '' + n) + '.jpg';
+  return THEME[ch] || '';
 }
 function exBlock(w) {
   if (!w.ex) return '';
