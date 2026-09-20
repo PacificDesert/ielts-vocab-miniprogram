@@ -15,6 +15,7 @@ Page({
     min: config.PLAN_MIN,
     cloud: false,
     syncText: '',
+    syncAt: '',
     total: 0
   },
 
@@ -31,8 +32,18 @@ Page({
       planInput: String(plan.perRound),
       step: this.stepOf(plan.perRound),
       cloud: cloud.isReady(),
-      syncText: cloud.isReady() ? '已开启' : '未配置云环境'
+      syncText: cloud.isReady() ? '已开启' : '未配置云环境',
+      syncAt: this.formatSync(store.lastSync())
     });
+  },
+
+  formatSync(ts) {
+    if (!ts) return '尚未同步';
+    const d = new Date(ts);
+    const p = n => (n < 10 ? '0' + n : '' + n);
+    const sameDay = new Date().toDateString() === d.toDateString();
+    return (sameDay ? '' : (d.getMonth() + 1) + '月' + d.getDate() + '日 ')
+      + p(d.getHours()) + ':' + p(d.getMinutes());
   },
 
   stepOf(n) {
@@ -73,27 +84,27 @@ Page({
     this.refresh();
   },
 
-  onPush() {
-    if (!cloud.isReady()) {
-      wx.showToast({ title: '请先在 config.js 配置云环境', icon: 'none' });
-      return;
-    }
-    store.push()
-      .then(() => wx.showToast({ title: '已同步到云端', icon: 'none' }))
-      .catch(() => wx.showToast({ title: '同步失败', icon: 'none' }));
+  onToggleAutoSync(e) {
+    store.toggleAutoSync(e.detail.value);
+    this.refresh();
   },
 
-  onPull() {
+  onSyncNow() {
     if (!cloud.isReady()) {
       wx.showToast({ title: '请先在 config.js 配置云环境', icon: 'none' });
       return;
     }
-    store.pull()
-      .then(changed => {
+    wx.showLoading({ title: '同步中', mask: true });
+    store.sync()
+      .then(() => {
+        wx.hideLoading();
         this.refresh();
-        wx.showToast({ title: changed ? '已拉取云端进度' : '云端进度已是最新', icon: 'none' });
+        wx.showToast({ title: '已同步', icon: 'none' });
       })
-      .catch(() => wx.showToast({ title: '同步失败', icon: 'none' }));
+      .catch(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '同步失败，请检查网络', icon: 'none' });
+      });
   },
 
   onReset() {
@@ -110,6 +121,10 @@ Page({
         wx.showToast({ title: '已重置', icon: 'none' });
       }
     });
+  },
+
+  onPrivacy() {
+    wx.navigateTo({ url: '/pages/privacy/privacy' });
   },
 
   onAbout() {

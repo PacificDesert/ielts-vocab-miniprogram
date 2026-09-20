@@ -60,21 +60,27 @@
   </view>
 
   <view class="group">
-    <view class="group-title">云端同步（多人使用）</view>
+    <view class="group-title">多设备同步</view>
     <view class="card">
       <view class="cell">
         <view class="cell-main">
           <view class="cell-title">云开发环境</view>
-          <view class="cell-sub">每位用户的学习进度按 openid 独立存储</view>
+          <view class="cell-sub">进度按微信账号独立存储，换手机自动同步</view>
         </view>
         <view class="cell-value">{{syncText}}</view>
       </view>
-      <view class="cell" bindtap="onPush">
-        <view class="cell-main"><view class="cell-title">上传本机进度</view></view>
-        <view class="chevron"></view>
+      <view class="cell">
+        <view class="cell-main">
+          <view class="cell-title">自动同步</view>
+          <view class="cell-sub">学习后自动上传，启动时自动合并</view>
+        </view>
+        <switch checked="{{plan.autoSync}}" color="#007AFF" bindchange="onToggleAutoSync" />
       </view>
-      <view class="cell" bindtap="onPull">
-        <view class="cell-main"><view class="cell-title">拉取云端进度</view></view>
+      <view class="cell" bindtap="onSyncNow">
+        <view class="cell-main">
+          <view class="cell-title">立即同步</view>
+          <view class="cell-sub">上次同步：{{syncAt}}</view>
+        </view>
         <view class="chevron"></view>
       </view>
     </view>
@@ -84,6 +90,10 @@
     <view class="card">
       <view class="cell" bindtap="onAbout">
         <view class="cell-main"><view class="cell-title">关于词库</view></view>
+        <view class="chevron"></view>
+      </view>
+      <view class="cell" bindtap="onPrivacy">
+        <view class="cell-main"><view class="cell-title">用户协议与隐私政策</view></view>
         <view class="chevron"></view>
       </view>
       <view class="cell" bindtap="onReset">

@@ -1,0 +1,24 @@
+.doc { padding-top: 24rpx; }
+.doc-title { padding: 8rpx 32rpx 0; font-size: 44rpx; font-weight: 700; letter-spacing: -0.5rpx; }
+.doc-sub { padding: 12rpx 32rpx 24rpx; font-size: 24rpx; color: var(--text2); }
+
+.doc-card {
+  margin: 0 24rpx 40rpx;
+  padding: 8rpx 32rpx 24rpx;
+  background: var(--card);
+  border-radius: 24rpx;
+}
+.sec { padding: 24rpx 0 8rpx; }
+.sec-t { font-size: 30rpx; font-weight: 500; margin-bottom: 12rpx; }
+.sec-p { font-size: 27rpx; line-height: 1.75; color: #3A3A3C; margin-bottom: 8rpx; }
+.sec-li { font-size: 27rpx; line-height: 1.75; color: #3A3A3C; margin-bottom: 6rpx; }
+.em { font-weight: 500; color: var(--text); }
+.mail {
+  display: inline-block;
+  margin-top: 8rpx;
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--blue);
+  font-size: 27rpx;
+}

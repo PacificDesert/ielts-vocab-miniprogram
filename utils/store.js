@@ -2,7 +2,9 @@ const config = require('../config');
 const cloud = require('./cloud');
 
 const KEY = 'ielts_vocab_state';
+const SYNC_KEY = 'ielts_vocab_lastsync';
 const MASTER_LV = 3;
+const PUSH_DELAY = 2000;   // 进度变化后延迟多久推送，避免连续操作打云函数
 
 const state = {
   v: 1,
@@ -13,6 +15,10 @@ const state = {
   days: {},
   updated: 0
 };
+
+let syncTimer = null;
+let syncPending = false;
+let syncing = false;
 
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -62,11 +68,11 @@ function day() {
 
 function mark(word, delta, ok) {
   const k = String(word).toLowerCase();
-  const m = state.marks[k] || { lv: 0, r: 0, w: 0, t: 0 };
+  const m = state.marks[k] || { lv: 0, t: 0 };
   m.lv = Math.max(0, Math.min(5, m.lv + delta));
-  if (ok) m.r += 1; else m.w += 1;
   m.t = Date.now();
   state.marks[k] = m;
+  scheduleSync();
 }
 
 /** 记忆卡：认识 +1 级，不认识清零 */
@@ -173,6 +179,7 @@ function setPlan(patch) {
   Object.assign(state.plan, patch);
   state.plan.perRound = clampPlan(state.plan.perRound);
   save();
+  scheduleSync();
   return state.plan;
 }
 
@@ -184,22 +191,123 @@ function toggleExpand(on) {
   return setPlan({ showExpand: !!on });
 }
 
-/** 云端同步 */
+function toggleAutoSync(on) {
+  return setPlan({ autoSync: !!on });
+}
+
+/* ---------------- 多设备同步 ---------------- */
+
+function lastSync() {
+  return wx.getStorageSync(SYNC_KEY) || 0;
+}
+
+function markSynced() {
+  const t = Date.now();
+  wx.setStorageSync(SYNC_KEY, t);
+  return t;
+}
+
+/**
+ * 合并云端状态：按单词逐条取「修改时间较新」的一方，day 计数取最大值，
+ * 学习游标取较大值，计划设置跟随整体更新时间较新的一方。
+ * 这样两台设备各自背了一半的单词，合并后不会互相覆盖。
+ */
+function mergeRemote(remote) {
+  if (!remote || typeof remote !== 'object') return false;
+  let changed = false;
+
+  const remoteMarks = remote.marks || {};
+  Object.keys(remoteMarks).forEach(k => {
+    const r = remoteMarks[k];
+    const l = state.marks[k];
+    if (!l || (r.t || 0) > (l.t || 0)) {
+      state.marks[k] = { lv: r.lv || 0, t: r.t || 0 };
+      changed = true;
+    }
+  });
+
+  const remoteDays = remote.days || {};
+  Object.keys(remoteDays).forEach(k => {
+    const r = remoteDays[k] || {};
+    const l = state.days[k];
+    if (!l) {
+      state.days[k] = { learn: r.learn || 0, spell: r.spell || 0, right: r.right || 0, wrong: r.wrong || 0 };
+      changed = true;
+      return;
+    }
+    ['learn', 'spell', 'right', 'wrong'].forEach(f => {
+      if ((r[f] || 0) > (l[f] || 0)) {
+        l[f] = r[f] || 0;
+        changed = true;
+      }
+    });
+  });
+
+  if ((remote.cursor || 0) > (state.cursor || 0)) {
+    state.cursor = remote.cursor;
+    changed = true;
+  }
+  if ((remote.spellCursor || 0) > (state.spellCursor || 0)) {
+    state.spellCursor = remote.spellCursor;
+    changed = true;
+  }
+  if ((remote.updated || 0) > (state.updated || 0) && remote.plan) {
+    state.plan = Object.assign({}, config.DEFAULT_PLAN, remote.plan, { autoSync: state.plan.autoSync });
+    state.plan.perRound = clampPlan(state.plan.perRound);
+    changed = true;
+  }
+  return changed;
+}
+
+/** 双向同步：先拉取合并，再把合并结果推回云端 */
+function sync() {
+  if (!cloud.isReady()) return Promise.reject(new Error('cloud not ready'));
+  if (syncing) {
+    syncPending = true;
+    return Promise.resolve(false);
+  }
+  syncing = true;
+  return cloud.call('data', { action: 'load' })
+    .then(res => {
+      const changed = mergeRemote(res && res.state);
+      state.updated = Date.now();
+      wx.setStorageSync(KEY, state);
+      return cloud.call('data', { action: 'save', payload: { state } }).then(() => changed);
+    })
+    .then(changed => {
+      markSynced();
+      syncing = false;
+      if (syncPending) {
+        syncPending = false;
+        scheduleSync(0);
+      }
+      return changed;
+    })
+    .catch(err => {
+      syncing = false;
+      throw err;
+    });
+}
+
+/** 进度变化后延迟推送，避免连点触发多次云函数调用 */
+function scheduleSync(delay) {
+  if (!cloud.isReady() || !state.plan.autoSync) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncTimer = null;
+    sync().catch(() => {});
+  }, typeof delay === 'number' ? delay : PUSH_DELAY);
+}
+
+/** 手动触发一次立即同步（忽略 autoSync 开关） */
 function push() {
   save();
-  return cloud.call('data', { action: 'save', payload: { state } });
+  if (!cloud.isReady()) return Promise.reject(new Error('cloud not ready'));
+  return sync();
 }
 
 function pull() {
-  return cloud.call('data', { action: 'load' }).then(res => {
-    const remote = res && res.state;
-    if (remote && (remote.updated || 0) > (state.updated || 0)) {
-      Object.assign(state, remote);
-      wx.setStorageSync(KEY, state);
-      return true;
-    }
-    return false;
-  });
+  return sync();
 }
 
 function reset() {
@@ -208,11 +316,13 @@ function reset() {
   state.cursor = 0;
   state.spellCursor = 0;
   save();
+  scheduleSync(0);
 }
 
 module.exports = {
   load, save, flush, get, today, day, status, stats, streak,
   markStudy, markSpell, nextLearnBatch, nextSpellBatch,
-  setPlan, setPerRound, toggleExpand, perRound, clampPlan,
+  setPlan, setPerRound, toggleExpand, toggleAutoSync, perRound, clampPlan,
+  sync, scheduleSync, lastSync,
   push, pull, reset, MASTER_LV
 };

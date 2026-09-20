@@ -4,21 +4,51 @@ const cloud = require('./utils/cloud');
 App({
   globalData: {
     cloudReady: false,
-    openid: ''
+    openid: '',
+    syncedAt: 0
   },
 
   onLaunch() {
-    store.load();
     this.globalData.cloudReady = cloud.init();
-    if (this.globalData.cloudReady) {
-      cloud.call('login').then(res => {
+    store.load();
+
+    if (!this.globalData.cloudReady) return;
+
+    // 启动时登录 + 双向同步（合并后写回本地，页面 onShow 会读到最新数据）
+    cloud.call('login', {})
+      .then(res => {
         this.globalData.openid = res.openid || '';
-        return store.pull();
-      }).catch(() => {});
-    }
+        return store.sync();
+      })
+      .then(() => {
+        this.globalData.syncedAt = Date.now();
+        this.refreshPage();
+      })
+      .catch(() => {});
   },
 
   onHide() {
     store.flush();
+  },
+
+  onShow() {
+    // 从后台切回时也同步一次，避免两台设备数据长期不一致
+    if (this.globalData.cloudReady && Date.now() - this.globalData.syncedAt > 60000) {
+      store.sync()
+        .then(() => {
+          this.globalData.syncedAt = Date.now();
+          this.refreshPage();
+        })
+        .catch(() => {});
+    }
+  },
+
+  /** 同步回来后刷新当前页面数据 */
+  refreshPage() {
+    const pages = getCurrentPages();
+    const cur = pages[pages.length - 1];
+    if (cur && typeof cur.onShow === 'function') {
+      try { cur.onShow(); } catch (e) { /* 忽略单个页面刷新失败 */ }
+    }
   }
 });

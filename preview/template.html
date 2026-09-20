@@ -149,6 +149,15 @@ body{
 .stage-art{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover}
 .stage-veil{position:absolute;left:0;top:0;right:0;bottom:0}
 .stage-mono{position:absolute;right:-10px;bottom:-50px;font-size:190px;font-weight:700;line-height:1;opacity:.12}
+
+/* 隐私政策页 */
+.doc{padding:14px 0 30px}
+.doc-t{padding:4px 18px 0;font-size:22px;font-weight:700;letter-spacing:-.3px}
+.doc-s{padding:6px 18px 12px;font-size:12px;color:var(--text2)}
+.doc-card{margin:0 12px;padding:4px 18px 14px;background:#fff;border-radius:12px}
+.dsec{padding:12px 0 4px}
+.dsec-t{font-size:15px;font-weight:500;margin-bottom:6px}
+.dsec-p{font-size:13.5px;line-height:1.75;color:#3A3A3C;margin-bottom:4px}
 .ex-card{padding:16px 18px}
 .ex-en{font-size:15px;line-height:1.6}
 .ex-zh{font-size:13px;color:var(--text2);line-height:1.6;margin-top:8px}
@@ -347,6 +356,7 @@ function renderTabs() {
   $('tabbar').innerHTML = TABS.map(t => {
     const on = (t.id === 'learn' && (cur.screen === 'learn' || cur.screen === 'study'))
       || (t.id === 'vocab' && (cur.screen === 'vocab' || cur.screen === 'detail' || cur.screen === 'expand'))
+      || (t.id === 'me' && (cur.screen === 'me' || cur.screen === 'privacy'))
       || (t.id === cur.screen);
     return '<div class="tab' + (on ? ' on' : '') + '" data-tab="' + t.id + '">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">' + ICONS[t.icon] + '</svg>'
@@ -373,7 +383,7 @@ function show(screen, back) {
 function render() {
   const s = $('screen');
   const nav = $('navTitle');
-  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', expand: '单词拓展', study: '记忆单词', spell: '拼写自测', me: '我的' };
+  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', expand: '单词拓展', study: '记忆单词', spell: '拼写自测', me: '我的', privacy: '用户协议与隐私政策' };
   nav.textContent = titles[cur.screen] || '雅思词汇';
   let backBtn = $('nav').querySelector('.back');
   if (backBtn) backBtn.remove();
@@ -384,7 +394,7 @@ function render() {
     b.onclick = () => show(cur.back);
     $('nav').prepend(b);
   }
-  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, expand: vExpand, study: vStudy, spell: vSpell, me: vMe }[cur.screen])();
+  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, expand: vExpand, study: vStudy, spell: vSpell, me: vMe, privacy: vPrivacy }[cur.screen])();
   bind(s);
   renderTabs();
   s.scrollTop = 0;
@@ -670,15 +680,63 @@ function vMe() {
     + '<div class="cell-sub">标记「认识」后展示例句与相近单词</div></div>'
     + '<div class="switch' + (S.showExpand ? ' on' : '') + '" data-act="toggleExpand"><i></i></div></div>'
     + '</div></div>'
-    + '<div class="group"><div class="group-title">云端同步（真机功能）</div><div class="card">'
-    + '<div class="cell"><div class="cell-main"><div class="cell-title">云开发环境</div>'
-    + '<div class="cell-sub">每位用户按 openid 独立存储</div></div>'
+    + '<div class="group"><div class="group-title">多设备同步</div><div class="card">'
+    + '<div class="cell" style="cursor:default"><div class="cell-main">'
+    + '<div class="cell-title">云开发环境</div>'
+    + '<div class="cell-sub">进度按微信账号独立存储，换手机自动同步</div></div>'
     + '<div class="cell-value" style="color:#FF9500">预览不可用</div></div>'
+    + '<div class="cell" style="cursor:default"><div class="cell-main">'
+    + '<div class="cell-title">自动同步</div>'
+    + '<div class="cell-sub">学习后自动上传，启动时自动合并</div></div>'
+    + '<div class="switch on"><i></i></div></div>'
+    + '<div class="cell" data-act="syncNow"><div class="cell-main">'
+    + '<div class="cell-title">立即同步</div>'
+    + '<div class="cell-sub">上次同步：尚未同步</div></div><div class="chev"></div></div>'
     + '</div></div>'
     + '<div class="group"><div class="card">'
     + '<div class="cell" data-act="about"><div class="cell-main"><div class="cell-title">关于词库</div></div><div class="chev"></div></div>'
+    + '<div class="cell" data-act="privacy"><div class="cell-main"><div class="cell-title">用户协议与隐私政策</div></div><div class="chev"></div></div>'
     + '<div class="cell" data-act="reset"><div class="cell-main"><div class="cell-title" style="color:#FF3B30">重置学习进度</div></div></div>'
     + '</div></div>';
+}
+
+function vPrivacy() {
+  return '<div class="doc">'
+    + '<div class="doc-t">用户协议与隐私政策</div>'
+    + '<div class="doc-s">最近更新：2026-09-21</div>'
+    + '<div class="doc-card">'
+    + sec('一、我们收集哪些信息', [
+        '只处理提供背单词功能所必需的最少信息：',
+        '· 微信用户标识（openid）：由微信在调用云函数时自动提供，用于区分不同用户的数据。拿不到昵称、头像、手机号。',
+        '· 你的学习记录：已学单词、熟练度、拼写情况、每日数量、学习计划。',
+        '不收集位置、通讯录、相册、麦克风，也不接入任何广告或统计 SDK。'
+      ])
+    + sec('二、这些信息用来做什么', [
+        '· 记录学习进度，下次打开能接着学；',
+        '· 同一微信账号的不同设备之间同步进度。',
+        '除此之外不作任何用途。'
+      ])
+    + sec('三、存放在哪里', [
+        '· 本机：默认保存在手机微信本地存储，卸载或清除数据会一并删除。',
+        '· 云端（可选）：开启同步后保存到微信云开发数据库，按 openid 一人一条，仅本人可读写，存储在中国境内。'
+      ])
+    + sec('四、第三方服务', ['点击发音会向有道词典公开接口请求读音，请求内容仅为单词本身。'])
+    + sec('五、你的权利', [
+        '· 查看与修改：学习记录在「我的」可见，可随时重置。',
+        '· 删除：「重置学习进度」会清空本机并同步清空云端记录。',
+        '· 停止收集：删除本小程序即可。'
+      ])
+    + sec('六、词库与版权', [
+        '单词表与例句整理自公开出版物，著作权归原作者及出版方所有，仅用于个人学习用途。',
+        '音标数据来自开源项目 ipa-dict（MIT），程序代码基于 MIT 协议开源。'
+      ])
+    + sec('七、联系我们', ['对以上内容有疑问可发邮件至 924422162@qq.com。'])
+    + '</div></div>';
+}
+function sec(t, ps) {
+  return '<div class="dsec"><div class="dsec-t">' + esc(t) + '</div>'
+    + ps.map(p => '<div class="dsec-p">' + esc(p) + '</div>').join('')
+    + '</div>';
 }
 
 function bind(s) {
@@ -789,6 +847,8 @@ function act(a) {
     if (spell.idx >= spell.list.length) spell.done = true;
     return render();
   }
+  if (a === 'privacy') return show('privacy', 'me');
+  if (a === 'syncNow') return toast('预览里没有云环境，真机配置后可用');
   if (a === 'about') return toast('3328 词 · 22 章节 · 3000+ 条书中例句');
   if (a === 'reset') {
     S = { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: S.plan, showExpand: S.showExpand };

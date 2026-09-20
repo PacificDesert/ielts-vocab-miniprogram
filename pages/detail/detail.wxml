@@ -8,7 +8,7 @@
       <view class="wcard-word">{{w}}</view>
       <view class="wcard-foot">
         <text class="wcard-ph" wx:if="{{ph}}">{{ph}}</text>
-        <view class="wcard-speak" hover-class="btn-hover" catchtap="play">
+        <view class="wcard-speak" wx:if="{{canSpeak}}" hover-class="btn-hover" catchtap="play">
           <view class="speak-icon"></view>
         </view>
       </view>

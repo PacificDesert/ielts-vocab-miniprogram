@@ -6,7 +6,8 @@
     "pages/me/me",
     "pages/study/study",
     "pages/detail/detail",
-    "pages/expand/expand"
+    "pages/expand/expand",
+    "pages/privacy/privacy"
   ],
   "window": {
     "backgroundTextStyle": "dark",

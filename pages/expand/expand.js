@@ -11,7 +11,8 @@ Page({
     sim: [],
     dr: [],
     from: '',
-    lv: 0
+    lv: 0,
+    canSpeak: !!config.AUDIO_API
   },
 
   onLoad(q) {

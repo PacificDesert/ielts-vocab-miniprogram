@@ -1,0 +1,62 @@
+<view class="page doc">
+  <view class="doc-title">用户协议与隐私政策</view>
+  <view class="doc-sub">最近更新：{{updated}}</view>
+
+  <view class="doc-card">
+    <view class="sec">
+      <view class="sec-t">一、我们收集哪些信息</view>
+      <view class="sec-p">本小程序只处理为提供背单词功能所必需的最少信息：</view>
+      <view class="sec-li">· <text class="em">微信用户标识（openid）</text>：由微信在调用云函数时自动提供，用于区分不同用户的数据。我们拿不到你的昵称、头像、手机号，也无法用它反查你的真实身份。</view>
+      <view class="sec-li">· <text class="em">你的学习记录</text>：已学单词、熟练度、拼写正确情况、每日学习数量、学习计划设置。这些数据由你自己产生。</view>
+      <view class="sec-p">我们不收集位置、通讯录、相册、麦克风、剪贴板内容，也不接入任何广告或统计分析 SDK。</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">二、这些信息用来做什么</view>
+      <view class="sec-li">· 记录你的学习进度，让你下次打开时能接着学；</view>
+      <view class="sec-li">· 在你登录同一微信账号的不同设备之间同步进度。</view>
+      <view class="sec-p">除此之外不作任何用途，不会用于推送、营销或用户画像。</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">三、存放在哪里</view>
+      <view class="sec-li">· <text class="em">本机</text>：学习进度默认保存在你手机的微信本地存储中，卸载或清除小程序数据会一并删除。</view>
+      <view class="sec-li">· <text class="em">云端（可选）</text>：开启云端同步后，进度会保存到本小程序所属的微信云开发数据库中，按 openid 一人一条记录，仅本人可读写。数据存储在中国境内。</view>
+      <view class="sec-p">未开启云端同步时，你的数据不会离开你的手机。</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">四、第三方服务</view>
+      <view class="sec-p">点击发音按钮时，会向有道词典的公开接口请求该单词的读音，请求内容仅为单词本身。除此之外不向任何第三方发送你的数据。</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">五、你的权利</view>
+      <view class="sec-li">· <text class="em">查看与修改</text>：学习记录在「我的」页面可见，可随时重置。</view>
+      <view class="sec-li">· <text class="em">删除</text>：「我的」→「重置学习进度」会清空本机记录，并同步清空云端记录。</view>
+      <view class="sec-li">· <text class="em">停止收集</text>：删除本小程序即可，本机数据随之清除；你也可以联系我们删除云端数据。</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">六、词库与版权</view>
+      <view class="sec-p">单词表与例句整理自公开出版物，著作权归原作者及出版方所有，本小程序仅用于个人学习用途，不提供任何形式的商业服务或再分发。</view>
+      <view class="sec-p">音标数据来自开源项目 ipa-dict（MIT 协议）。程序代码基于 MIT 协议开源。</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">七、免责声明</view>
+      <view class="sec-p">词库由文档自动整理并人工校对，可能存在个别释义或音标偏差，请以权威词典为准。本小程序不对学习效果作出承诺。</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">八、联系我们</view>
+      <view class="sec-p">对以上内容有疑问，或需要删除你的云端数据，可发邮件至：</view>
+      <view class="mail" hover-class="btn-hover" bindtap="onCopyEmail">{{email}}</view>
+    </view>
+
+    <view class="sec">
+      <view class="sec-t">九、政策更新</view>
+      <view class="sec-p">本政策如有调整会在本页面更新，并修改上方「最近更新」日期。继续使用即视为接受更新后的内容。</view>
+    </view>
+  </view>
+</view>

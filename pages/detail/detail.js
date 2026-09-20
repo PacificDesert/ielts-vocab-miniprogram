@@ -13,7 +13,8 @@ Page({
     lv: 0,
     ex: null,
     dr: [],
-    card: {}
+    card: {},
+    canSpeak: !!config.AUDIO_API
   },
 
   onLoad(query) {
