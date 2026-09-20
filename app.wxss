@@ -1,0 +1,123 @@
+/* iOS 简约风格基础样式 */
+page {
+  --bg: #F2F2F7;
+  --card: #FFFFFF;
+  --text: #1C1C1E;
+  --text2: #8E8E93;
+  --text3: #C7C7CC;
+  --line: #E5E5EA;
+  --blue: #007AFF;
+  --green: #34C759;
+  --red: #FF3B30;
+  --orange: #FF9500;
+
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 32rpx;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+view, text, input, textarea, button { box-sizing: border-box; }
+
+.page { min-height: 100vh; padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
+
+/* 大标题 */
+.h1 {
+  padding: 24rpx 32rpx 8rpx;
+  font-size: 60rpx;
+  font-weight: 700;
+  letter-spacing: -1rpx;
+}
+.h2 { padding: 0 32rpx 16rpx; font-size: 28rpx; color: var(--text2); }
+
+/* 分组卡片 */
+.group { margin: 0 24rpx 24rpx; }
+.group-title {
+  padding: 8rpx 8rpx 12rpx;
+  font-size: 26rpx;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+}
+.card {
+  background: var(--card);
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+/* 单元格 */
+.cell {
+  display: flex;
+  align-items: center;
+  min-height: 100rpx;
+  padding: 20rpx 32rpx;
+  background: var(--card);
+  position: relative;
+}
+.cell::after {
+  content: '';
+  position: absolute;
+  left: 32rpx; right: 0; bottom: 0;
+  height: 1rpx;
+  background: var(--line);
+  transform: scaleY(0.5);
+}
+.cell:last-child::after { display: none; }
+.cell-main { flex: 1; min-width: 0; }
+.cell-title { font-size: 32rpx; }
+.cell-sub { font-size: 26rpx; color: var(--text2); margin-top: 4rpx; }
+.cell-value { font-size: 30rpx; color: var(--text2); margin-left: 16rpx; }
+.chevron {
+  width: 16rpx; height: 16rpx;
+  border-top: 3rpx solid var(--text3);
+  border-right: 3rpx solid var(--text3);
+  transform: rotate(45deg);
+  margin-left: 16rpx;
+  flex: none;
+}
+
+/* 按钮 */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-plain { background: #EFEFF4; color: var(--text); }
+.btn-ghost { background: rgba(0, 122, 255, 0.1); color: var(--blue); }
+.btn-block { width: 100%; }
+.btn-row { display: flex; gap: 20rpx; }
+.btn-row .btn { flex: 1; }
+.btn-hover { opacity: 0.72; }
+
+/* 进度条 */
+.bar {
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: #EFEFF4;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  background: var(--blue);
+  transition: width 0.3s;
+}
+
+/* 其它 */
+.tag {
+  display: inline-block;
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  background: #EFEFF4;
+  color: var(--text2);
+}
+.empty { padding: 120rpx 0; text-align: center; color: var(--text2); font-size: 28rpx; }
+.mono { font-family: "SF Mono", Menlo, Consolas, monospace; }

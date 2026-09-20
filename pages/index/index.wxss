@@ -1,0 +1,15 @@
+.hero { padding: 40rpx 32rpx 32rpx; }
+.hero-row { display: flex; }
+.hero-col { flex: 1; text-align: center; }
+.hero-num { font-size: 52rpx; font-weight: 600; letter-spacing: -1rpx; }
+.hero-label { font-size: 24rpx; color: var(--text2); margin-top: 6rpx; }
+.hero-bar { margin-top: 36rpx; }
+.hero-foot { font-size: 24rpx; color: var(--text2); margin-top: 12rpx; }
+.hero-actions { display: flex; gap: 20rpx; margin-top: 36rpx; }
+.hero-actions .btn { flex: 1; }
+.footnote {
+  padding: 24rpx 32rpx 40rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--text2);
+}

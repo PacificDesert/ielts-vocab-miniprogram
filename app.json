@@ -1,0 +1,52 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/vocab/vocab",
+    "pages/spell/spell",
+    "pages/me/me",
+    "pages/study/study",
+    "pages/detail/detail"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTitleText": "雅思词汇",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F2F2F7"
+  },
+  "tabBar": {
+    "color": "#8E8E93",
+    "selectedColor": "#007AFF",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "学习",
+        "iconPath": "images/tabbar/study.png",
+        "selectedIconPath": "images/tabbar/study_on.png"
+      },
+      {
+        "pagePath": "pages/vocab/vocab",
+        "text": "词库",
+        "iconPath": "images/tabbar/book.png",
+        "selectedIconPath": "images/tabbar/book_on.png"
+      },
+      {
+        "pagePath": "pages/spell/spell",
+        "text": "拼写",
+        "iconPath": "images/tabbar/keyboard.png",
+        "selectedIconPath": "images/tabbar/keyboard_on.png"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我的",
+        "iconPath": "images/tabbar/me.png",
+        "selectedIconPath": "images/tabbar/me_on.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,32 @@
+.detail { padding-top: 24rpx; }
+.head { padding: 24rpx 32rpx 40rpx; }
+.word-line { display: flex; align-items: center; }
+.word { font-size: 68rpx; font-weight: 700; letter-spacing: -1rpx; }
+.speak {
+  width: 64rpx; height: 64rpx;
+  margin-left: 24rpx;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.1);
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.speak-icon {
+  width: 0; height: 0;
+  border-left: 22rpx solid var(--blue);
+  border-top: 14rpx solid transparent;
+  border-bottom: 14rpx solid transparent;
+  margin-left: 6rpx;
+}
+.ph { font-size: 30rpx; color: var(--text2); margin-top: 12rpx; }
+.tags { margin-top: 24rpx; display: flex; gap: 12rpx; }
+.cn-card { padding: 32rpx; }
+.cn { font-size: 34rpx; line-height: 1.6; }
+.gap { margin-top: 20rpx; }
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx 40rpx;
+}
+.pager-btn { font-size: 28rpx; color: var(--blue); padding: 12rpx 8rpx; }
+.pager-idx { font-size: 24rpx; color: var(--text2); }

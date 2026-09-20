@@ -1,0 +1,64 @@
+<view class="page">
+  <view class="h1">雅思词汇</view>
+  <view class="h2">雅思词汇真经 · 共 {{stats.total}} 词</view>
+
+  <view class="group">
+    <view class="card hero">
+      <view class="hero-row">
+        <view class="hero-col">
+          <view class="hero-num">{{stats.learned}}</view>
+          <view class="hero-label">已学</view>
+        </view>
+        <view class="hero-col">
+          <view class="hero-num">{{stats.mastered}}</view>
+          <view class="hero-label">已掌握</view>
+        </view>
+        <view class="hero-col">
+          <view class="hero-num">{{stats.accuracy}}%</view>
+          <view class="hero-label">正确率</view>
+        </view>
+      </view>
+      <view class="bar hero-bar">
+        <view class="bar-fill" style="width:{{stats.percent}}%"></view>
+      </view>
+      <view class="hero-foot">学习进度 {{stats.percent}}%</view>
+      <view class="hero-actions">
+        <view class="btn btn-primary" hover-class="btn-hover" bindtap="onLearn">继续学习</view>
+        <view class="btn btn-plain" hover-class="btn-hover" bindtap="onSpell">拼写自测</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="group-title">今日</view>
+    <view class="card">
+      <view class="cell">
+        <view class="cell-main"><view class="cell-title">今日学习</view></view>
+        <view class="cell-value">{{today.learn || 0}} 词</view>
+      </view>
+      <view class="cell">
+        <view class="cell-main"><view class="cell-title">拼写自测</view></view>
+        <view class="cell-value">{{today.spell || 0}} 题</view>
+      </view>
+      <view class="cell">
+        <view class="cell-main"><view class="cell-title">连续打卡</view></view>
+        <view class="cell-value">{{stats.streak}} 天</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="group-title">词库章节</view>
+    <view class="card">
+      <view class="cell" wx:for="{{chapters}}" wx:key="name" bindtap="onChapter" data-name="{{item.name}}">
+        <view class="cell-main">
+          <view class="cell-title">{{item.name}}</view>
+          <view class="cell-sub">{{item.learned}} / {{item.total}} 词 · {{item.percent}}%</view>
+        </view>
+        <view class="chevron"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footnote" wx:if="{{!cloud}}">当前为本地模式，进度仅保存在本机</view>
+</view>

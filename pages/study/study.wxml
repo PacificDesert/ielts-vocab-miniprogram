@@ -1,0 +1,51 @@
+<view class="page study">
+
+  <block wx:if="{{!done}}">
+    <view class="bar-head">
+      <view class="bar">
+        <view class="bar-fill" style="width:{{(idx) / list.length * 100}}%"></view>
+      </view>
+      <view class="bar-text">{{idx + 1}} / {{list.length}}</view>
+    </view>
+
+    <view class="stage" bindtap="flip">
+      <view class="stage-card">
+        <view class="stage-word">{{cur.w}}</view>
+        <view class="stage-ph" wx:if="{{cur.ph}}">{{cur.ph}}</view>
+
+        <block wx:if="{{show}}">
+          <view class="stage-line"></view>
+          <view class="stage-cn">{{cur.cn}}</view>
+          <view class="stage-ch">{{cur.ch}}</view>
+        </block>
+        <view class="stage-hint" wx:else>轻触卡片查看释义</view>
+      </view>
+    </view>
+
+    <view class="actions">
+      <view class="btn btn-plain btn-block" hover-class="btn-hover" bindtap="onUnknown">不认识</view>
+      <view class="btn btn-primary btn-block" hover-class="btn-hover" bindtap="onKnow">认识</view>
+    </view>
+    <view class="copy-link" bindtap="copy">复制这个单词</view>
+  </block>
+
+  <block wx:else>
+    <view class="finish">
+      <view class="finish-title">本轮完成</view>
+      <view class="finish-row">
+        <view class="finish-col">
+          <view class="finish-num ok">{{right}}</view>
+          <view class="finish-label">认识</view>
+        </view>
+        <view class="finish-col">
+          <view class="finish-num no">{{wrong}}</view>
+          <view class="finish-label">不认识</view>
+        </view>
+      </view>
+      <view class="btn btn-primary btn-block" hover-class="btn-hover" bindtap="again">再来一组</view>
+      <view class="btn btn-plain btn-block gap" hover-class="btn-hover" bindtap="goSpell">去拼写自测</view>
+      <view class="btn btn-plain btn-block gap" hover-class="btn-hover" bindtap="goHome">返回首页</view>
+    </view>
+  </block>
+
+</view>

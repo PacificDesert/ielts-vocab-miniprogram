@@ -1,0 +1,66 @@
+<view class="page">
+  <view class="h1">词库</view>
+  <view class="h2">共 {{total}} 词，长按单词可一键复制</view>
+
+  <view class="search-wrap">
+    <view class="search">
+      <view class="search-icon"></view>
+      <input
+        class="search-input"
+        value="{{keyword}}"
+        placeholder="搜索单词或中文释义"
+        placeholder-class="search-ph"
+        confirm-type="search"
+        bindinput="onSearch"
+      />
+      <view class="search-clear" wx:if="{{keyword}}" bindtap="clearSearch">×</view>
+    </view>
+  </view>
+
+  <!-- 章节列表 -->
+  <block wx:if="{{mode === 'chapters'}}">
+    <view class="group">
+      <view class="card">
+        <view class="cell" wx:for="{{chapterRows}}" wx:key="name" bindtap="onChapterTap" data-name="{{item.name}}">
+          <view class="cell-main">
+            <view class="cell-title">{{item.name}}</view>
+            <view class="cell-sub">已学 {{item.learned}} / {{item.total}}</view>
+          </view>
+          <view class="chevron"></view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 单词列表 -->
+  <block wx:else>
+    <view class="list-head" wx:if="{{mode === 'chapter'}}" bindtap="backToChapters">
+      <text class="back">‹ 全部章节</text>
+      <text class="list-title">{{chapter}}</text>
+    </view>
+    <view class="group" wx:if="{{list.length}}">
+      <view class="card">
+        <view
+          class="word-row"
+          wx:for="{{list}}"
+          wx:key="w"
+          data-w="{{item.w}}"
+          bindtap="onWordTap"
+          bindlongpress="onWordLongPress"
+        >
+          <view class="word-main">
+            <view class="word-line">
+              <text class="word">{{item.w}}</text>
+              <text class="word-ph" wx:if="{{item.ph}}">{{item.ph}}</text>
+            </view>
+            <view class="word-cn">{{item.cn}}</view>
+          </view>
+          <view class="lv" wx:if="{{item.lv > 0}}">
+            <view class="lv-dot lv-{{item.lv >= 3 ? 'on' : 'off'}}"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:else>没有匹配的单词</view>
+  </block>
+</view>

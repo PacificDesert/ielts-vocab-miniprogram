@@ -1,0 +1,38 @@
+<view class="page detail">
+  <view class="head">
+    <view class="word-line">
+      <text class="word">{{w}}</text>
+      <view class="speak" hover-class="btn-hover" bindtap="play">
+        <view class="speak-icon"></view>
+      </view>
+    </view>
+    <view class="ph" wx:if="{{ph}}">{{ph}}</view>
+    <view class="tags">
+      <text class="tag">{{ch}}</text>
+      <text class="tag" wx:if="{{lv >= 3}}">已掌握</text>
+      <text class="tag" wx:elif="{{lv > 0}}">复习中</text>
+      <text class="tag" wx:else>未学习</text>
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="group-title">释义</view>
+    <view class="card cn-card">
+      <text class="cn">{{cn}}</text>
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="btn btn-primary btn-block" hover-class="btn-hover" bindtap="copy">一键复制</view>
+    <view class="btn-row gap">
+      <view class="btn btn-plain" hover-class="btn-hover" bindtap="markUnknown">不认识</view>
+      <view class="btn btn-ghost" hover-class="btn-hover" bindtap="markKnown">认识</view>
+    </view>
+  </view>
+
+  <view class="pager">
+    <view class="pager-btn" hover-class="btn-hover" bindtap="prev">‹ 上一个</view>
+    <view class="pager-idx">{{index + 1}} / {{total}}</view>
+    <view class="pager-btn" hover-class="btn-hover" bindtap="next">下一个 ›</view>
+  </view>
+</view>

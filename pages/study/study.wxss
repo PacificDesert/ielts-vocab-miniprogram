@@ -1,0 +1,46 @@
+.study { padding-top: 32rpx; }
+.bar-head { padding: 0 32rpx 32rpx; }
+.bar-text { margin-top: 12rpx; font-size: 24rpx; color: var(--text2); text-align: center; }
+
+.stage { padding: 0 24rpx; }
+.stage-card {
+  background: var(--card);
+  border-radius: 32rpx;
+  min-height: 620rpx;
+  padding: 80rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.stage-word {
+  font-size: 76rpx;
+  font-weight: 700;
+  letter-spacing: -1rpx;
+  text-align: center;
+  word-break: break-word;
+}
+.stage-ph { font-size: 30rpx; color: var(--text2); margin-top: 16rpx; }
+.stage-line { width: 80rpx; height: 2rpx; background: var(--line); margin: 48rpx 0 32rpx; }
+.stage-cn { font-size: 34rpx; line-height: 1.6; text-align: center; }
+.stage-ch { font-size: 24rpx; color: var(--text3); margin-top: 24rpx; }
+.stage-hint { font-size: 26rpx; color: var(--text3); margin-top: 60rpx; }
+
+.actions { display: flex; gap: 20rpx; padding: 40rpx 24rpx 0; }
+.actions .btn { flex: 1; }
+.gap { margin-top: 20rpx; }
+.copy-link {
+  text-align: center;
+  padding: 32rpx 0;
+  font-size: 26rpx;
+  color: var(--blue);
+}
+
+.finish { padding: 120rpx 40rpx 0; text-align: center; }
+.finish-title { font-size: 44rpx; font-weight: 600; margin-bottom: 60rpx; }
+.finish-row { display: flex; margin-bottom: 80rpx; }
+.finish-col { flex: 1; }
+.finish-num { font-size: 64rpx; font-weight: 600; }
+.finish-num.ok { color: var(--green); }
+.finish-num.no { color: var(--red); }
+.finish-label { font-size: 26rpx; color: var(--text2); margin-top: 8rpx; }
