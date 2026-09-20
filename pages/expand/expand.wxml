@@ -1,23 +1,29 @@
 <view class="page expand">
 
-  <view class="hero" wx:if="{{img}}">
-    <image class="hero-img" src="{{img}}" mode="aspectFill" lazy-load="{{true}}" />
-    <view class="hero-mask"></view>
-  </view>
-
-  <view class="head">
-    <view class="wline">
-      <text class="word">{{cur.w}}</text>
-      <view class="speak" hover-class="btn-hover" bindtap="onSpeak">
-        <view class="speak-icon"></view>
+  <view class="wcard">
+    <image class="wcard-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" lazy-load="{{true}}" />
+    <view class="wcard-veil" style="background:{{card.veil}}"></view>
+    <view class="wcard-mono" style="color:{{card.ink}}">{{card.mono}}</view>
+    <view class="wcard-body">
+      <view class="wcard-tag" style="color:{{card.ink}};background:{{card.tint}}">{{cur.ch}}</view>
+      <view class="wcard-word">{{cur.w}}</view>
+      <view class="wcard-foot">
+        <text class="wcard-ph" wx:if="{{cur.ph}}">{{cur.ph}}</text>
+        <view class="wcard-speak" hover-class="btn-hover" catchtap="onSpeak">
+          <view class="speak-icon"></view>
+        </view>
       </view>
     </view>
-    <view class="ph" wx:if="{{cur.ph}}">{{cur.ph}}</view>
-    <view class="cn">{{cur.cn}}</view>
-    <view class="tags">
-      <text class="tag">{{cur.ch}}</text>
-      <text class="tag" wx:if="{{lv >= 3}}">已掌握</text>
-      <text class="tag" wx:elif="{{lv > 0}}">复习中</text>
+  </view>
+
+  <view class="group" style="margin-top:24rpx">
+    <view class="card cn-card">
+      <view class="cn">{{cur.cn}}</view>
+      <view class="tags">
+        <text class="tag" wx:if="{{lv >= 3}}">已掌握</text>
+        <text class="tag" wx:elif="{{lv > 0}}">复习中</text>
+        <text class="tag" wx:else>未学习</text>
+      </view>
     </view>
   </view>
 

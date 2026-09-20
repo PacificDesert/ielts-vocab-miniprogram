@@ -25,7 +25,7 @@
       <view class="cell plan-cell">
         <view class="cell-main">
           <view class="cell-title">每组单词数</view>
-          <view class="cell-sub">{{min}}–{{max}} 之间，可自行修改</view>
+          <view class="cell-sub">最少 {{min}} 个，不设上限（最多按词库 {{total}} 词）</view>
         </view>
         <view class="stepper">
           <view class="step" hover-class="btn-hover" bindtap="decPlan">−</view>

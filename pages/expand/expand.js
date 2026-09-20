@@ -6,6 +6,7 @@ Page({
   data: {
     cur: {},
     img: '',
+    card: {},
     ex: null,
     sim: [],
     dr: [],
@@ -33,6 +34,7 @@ Page({
     this.setData({
       cur: it,
       img: word.themeImage(it.ch),
+      card: word.card(it.ch, it.w),
       ex: word.example(it),
       sim: word.similar(it),
       dr: it.dr || [],

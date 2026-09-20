@@ -12,7 +12,8 @@ Page({
     ch: '',
     lv: 0,
     ex: null,
-    dr: []
+    dr: [],
+    card: {}
   },
 
   onLoad(query) {
@@ -44,7 +45,8 @@ Page({
       ch: it.ch,
       lv: store.status(it.w),
       ex: word.example(it),
-      dr: it.dr || []
+      dr: it.dr || [],
+      card: word.card(it.ch, it.w)
     });
     wx.setNavigationBarTitle({ title: it.w });
   },

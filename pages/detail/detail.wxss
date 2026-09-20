@@ -1,23 +1,74 @@
-.detail { padding-top: 24rpx; }
-.head { padding: 24rpx 32rpx 40rpx; }
-.word-line { display: flex; align-items: center; }
-.word { font-size: 68rpx; font-weight: 700; letter-spacing: -1rpx; }
-.speak {
-  width: 64rpx; height: 64rpx;
-  margin-left: 24rpx;
+.detail { padding-top: 0; }
+
+/* 单词卡：每个单词都有的一张视觉卡片 */
+.wcard {
+  position: relative;
+  height: 440rpx;
+  overflow: hidden;
+  background: #E9EDF1;
+}
+.wcard-art {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+.wcard-veil {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+}
+.wcard-mono {
+  position: absolute;
+  right: -24rpx;
+  bottom: -110rpx;
+  font-size: 420rpx;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.13;
+}
+.wcard-body {
+  position: absolute;
+  left: 40rpx;
+  right: 40rpx;
+  bottom: 44rpx;
+}
+.wcard-tag {
+  display: inline-block;
+  padding: 4rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+.wcard-word {
+  font-size: 72rpx;
+  font-weight: 700;
+  letter-spacing: -1rpx;
+  color: #1C1C1E;
+  margin-top: 16rpx;
+  word-break: break-word;
+}
+.wcard-foot { display: flex; align-items: center; margin-top: 14rpx; }
+.wcard-ph { font-size: 28rpx; color: #6B7280; }
+.wcard-speak {
+  width: 56rpx;
+  height: 56rpx;
+  margin-left: 20rpx;
   border-radius: 50%;
-  background: rgba(0, 122, 255, 0.1);
-  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
 }
 .speak-icon {
-  width: 0; height: 0;
-  border-left: 22rpx solid var(--blue);
-  border-top: 14rpx solid transparent;
-  border-bottom: 14rpx solid transparent;
-  margin-left: 6rpx;
+  width: 0;
+  height: 0;
+  border-left: 20rpx solid var(--blue);
+  border-top: 13rpx solid transparent;
+  border-bottom: 13rpx solid transparent;
+  margin-left: 5rpx;
 }
-.ph { font-size: 30rpx; color: var(--text2); margin-top: 12rpx; }
+
 .tags { margin-top: 24rpx; display: flex; gap: 12rpx; }
 .cn-card { padding: 32rpx; }
 .cn { font-size: 34rpx; line-height: 1.6; }

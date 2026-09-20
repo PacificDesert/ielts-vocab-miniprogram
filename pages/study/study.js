@@ -9,7 +9,8 @@ Page({
     done: false,
     right: 0,
     wrong: 0,
-    cur: {}
+    cur: {},
+    card: {}
   },
 
   onLoad() {
@@ -19,7 +20,11 @@ Page({
 
   sync() {
     const cur = this.data.list[this.data.idx] || {};
-    this.setData({ cur, show: false });
+    this.setData({
+      cur,
+      show: false,
+      card: cur.w ? word.card(cur.ch, cur.w) : {}
+    });
   },
 
   flip() {

@@ -10,16 +10,21 @@
 
     <view class="stage" bindtap="flip">
       <view class="stage-card">
-        <view class="stage-word">{{cur.w}}</view>
-        <view class="stage-ph" wx:if="{{cur.ph}}">{{cur.ph}}</view>
+        <image class="stage-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" />
+        <view class="stage-veil" style="background:{{card.veil}}"></view>
+        <view class="stage-mono" style="color:{{card.ink}}" wx:if="{{!show}}">{{card.mono}}</view>
+        <view class="stage-inner">
+          <view class="stage-word">{{cur.w}}</view>
+          <view class="stage-ph" wx:if="{{cur.ph}}">{{cur.ph}}</view>
 
-        <block wx:if="{{show}}">
-          <view class="stage-line"></view>
-          <view class="stage-cn">{{cur.cn}}</view>
-          <view class="stage-ex" wx:if="{{cur.ex}}">{{cur.ex[0]}}</view>
-          <view class="stage-ch">{{cur.ch}}</view>
-        </block>
-        <view class="stage-hint" wx:else>轻触卡片查看释义</view>
+          <block wx:if="{{show}}">
+            <view class="stage-line"></view>
+            <view class="stage-cn">{{cur.cn}}</view>
+            <view class="stage-ex" wx:if="{{cur.ex}}">{{cur.ex[0]}}</view>
+            <view class="stage-ch">{{cur.ch}}</view>
+          </block>
+          <view class="stage-hint" wx:else>轻触卡片查看释义</view>
+        </view>
       </view>
     </view>
 

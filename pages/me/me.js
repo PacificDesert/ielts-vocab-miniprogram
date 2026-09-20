@@ -3,7 +3,7 @@ const word = require('../../utils/word');
 const cloud = require('../../utils/cloud');
 const config = require('../../config');
 
-const PRESETS = [10, 20, 30, 50, 100];
+const PRESETS = [10, 20, 30, 50, 100, 200, 500];
 
 Page({
   data: {
@@ -11,8 +11,8 @@ Page({
     plan: {},
     planInput: '20',
     presets: PRESETS,
+    step: 5,
     min: config.PLAN_MIN,
-    max: config.PLAN_MAX,
     cloud: false,
     syncText: '',
     total: 0
@@ -29,14 +29,22 @@ Page({
       total: word.total,
       plan,
       planInput: String(plan.perRound),
+      step: this.stepOf(plan.perRound),
       cloud: cloud.isReady(),
       syncText: cloud.isReady() ? '已开启' : '未配置云环境'
     });
   },
 
+  stepOf(n) {
+    if (n < 50) return 5;
+    if (n < 200) return 10;
+    if (n < 500) return 50;
+    return 100;
+  },
+
   commit(n) {
     const plan = store.setPerRound(n);
-    this.setData({ plan, planInput: String(plan.perRound) });
+    this.setData({ plan, planInput: String(plan.perRound), step: this.stepOf(plan.perRound) });
     wx.showToast({ title: '每组 ' + plan.perRound + ' 个', icon: 'none' });
   },
 
@@ -49,11 +57,11 @@ Page({
   },
 
   decPlan() {
-    this.commit(this.data.plan.perRound - 5);
+    this.commit(this.data.plan.perRound - this.data.step);
   },
 
   incPlan() {
-    this.commit(this.data.plan.perRound + 5);
+    this.commit(this.data.plan.perRound + this.data.step);
   },
 
   onPreset(e) {

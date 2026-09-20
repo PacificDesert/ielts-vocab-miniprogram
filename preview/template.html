@@ -134,9 +134,21 @@ body{
 .tab.on{color:var(--blue)}
 .tab svg{width:26px;height:26px}
 .empty{padding:60px 0;text-align:center;color:var(--text2);font-size:14px}
-.hero-img{position:relative;height:150px;margin-bottom:-22px;overflow:hidden}
-.hero-img img{width:100%;height:100%;object-fit:cover;display:block}
-.hero-img .mask{position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(to bottom,rgba(242,242,247,0),var(--bg))}
+/* 单词卡：每个单词都有一张（章节配图 + 色罩 + 首字母水印） */
+.wcard{position:relative;height:216px;overflow:hidden;background:#E9EDF1}
+.wcard-art{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block}
+.wcard-art.miss{display:none}
+.wcard-veil{position:absolute;left:0;top:0;right:0;bottom:0}
+.wcard-mono{position:absolute;right:-12px;bottom:-56px;font-size:212px;font-weight:700;line-height:1;opacity:.13}
+.wcard-body{position:absolute;left:20px;right:20px;bottom:20px}
+.wc-tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:500}
+.wc-word{font-size:36px;font-weight:700;letter-spacing:-.6px;color:#1C1C1E;margin-top:8px;word-break:break-word}
+.wc-foot{display:flex;align-items:center;margin-top:7px}
+.wc-ph{font-size:14px;color:#6B7280}
+.wc-spk{width:28px;height:28px;margin-left:10px;border-radius:50%;background:rgba(255,255,255,.86);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.stage-art{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover}
+.stage-veil{position:absolute;left:0;top:0;right:0;bottom:0}
+.stage-mono{position:absolute;right:-10px;bottom:-50px;font-size:190px;font-weight:700;line-height:1;opacity:.12}
 .ex-card{padding:16px 18px}
 .ex-en{font-size:15px;line-height:1.6}
 .ex-zh{font-size:13px;color:var(--text2);line-height:1.6;margin-top:8px}
@@ -184,14 +196,14 @@ body{
     <p>这是小程序界面的高保真还原，可直接点击操作：搜索、翻卡、拼写作答、复制单词都会真实响应。数据用的是仓库里 <code>data/words.js</code> 的真实词库。</p>
     <h2>可以试这些</h2>
     <ul>
+      <li><b>每个单词都有一张词卡</b>：章节配图做底 + 色罩 + 首字母水印（3328 词全覆盖，离线可用）</li>
       <li>「词库」里搜 <span class="k">volcano</span> 或 <span class="k">火山</span></li>
       <li>点任意单词进详情，按 <b>一键复制</b> 再粘贴看看（已含例句）</li>
-      <li><b>认识</b> 一下，会直接跳到「单词拓展」页：章节配图 + 书中例句 + 词形拓展 + 相近单词</li>
-      <li>拓展页点相近词可以一直联想下去，长按复制</li>
-      <li>「我的」里 <b>每组单词数</b> 可以自己改（1–200），下面还有预设胶囊</li>
+      <li><b>认识</b> 一下会跳到「单词拓展」页：例句 + 词形拓展 + 相近单词</li>
+      <li>拓展页点相近词可以一直联想下去</li>
+      <li>「我的」里 <b>每组单词数</b> 可自己输入，<b>最少 1、不设上限</b>（最多按词库 3328 词）</li>
       <li>嫌拓展页打扰？「我的」里关掉「认识后看拓展」即可</li>
-      <li>详情页点 <b>▶</b> 听发音（浏览器语音合成）</li>
-      <li>学习进度存在浏览器本地，刷新不丢</li>
+      <li>进度存在浏览器本地，刷新不丢</li>
     </ul>
     <h2>和真机的差异</h2>
     <ul>
@@ -284,8 +296,15 @@ function toast(msg) {
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function clampPlan(n) {
-  if (!n || isNaN(n)) return 20;
-  return Math.max(1, Math.min(200, Math.round(n)));
+  const v = Math.round(Number(n));
+  if (!v || isNaN(v)) return 20;
+  return Math.max(1, v);
+}
+function planStep(n) {
+  if (n < 50) return 5;
+  if (n < 200) return 10;
+  if (n < 500) return 50;
+  return 100;
 }
 function speak(w) {
   try {
@@ -452,6 +471,40 @@ function search(kw) {
 function themeImg(ch) {
   return THEME[ch] || '';
 }
+/* 与 utils/word.js 的 CHAPTER_STYLE 保持一致 */
+const CHAPTER_INK = {
+  '自然地理': '#2F5D45', '植物研究': '#3B6234', '动物保护': '#7A5620', '太空探索': '#333F6B',
+  '学校教育': '#28527F', '科技发明': '#33606F', '文化历史': '#6B4E2E', '语言演化': '#57407A',
+  '娱乐运动': '#8F4526', '物品材料': '#4A4A4F', '时尚潮流': '#833D5D', '饮食健康': '#8A6220',
+  '建筑场所': '#3E4F60', '交通旅行': '#245E82', '国家政府': '#7E3D2C', '社会经济': '#2F6B4E',
+  '法律法规': '#454565', '沙场争锋': '#6B3229', '社会角色': '#6B5A20', '行为动作': '#246B5C',
+  '身心健康': '#8A3636', '时间日期': '#414F60'
+};
+const CHAPTER_TINT = {
+  '自然地理': '231,240,234', '植物研究': '234,243,231', '动物保护': '247,241,229', '太空探索': '234,237,246',
+  '学校教育': '233,240,248', '科技发明': '233,242,245', '文化历史': '246,241,233', '语言演化': '240,235,246',
+  '娱乐运动': '249,237,231', '物品材料': '240,240,243', '时尚潮流': '248,235,241', '饮食健康': '249,243,230',
+  '建筑场所': '236,241,245', '交通旅行': '232,242,248', '国家政府': '248,236,232', '社会经济': '233,244,238',
+  '法律法规': '238,238,245', '沙场争锋': '247,234,231', '社会角色': '246,243,229', '行为动作': '231,244,241',
+  '身心健康': '248,235,235', '时间日期': '238,242,245'
+};
+function cardHtml(w) {
+  const tint = CHAPTER_TINT[w.ch] || '238,242,245';
+  const ink = CHAPTER_INK[w.ch] || '#3E4F60';
+  const img = themeImg(w.ch);
+  const veil = 'linear-gradient(180deg, rgba(' + tint + ',0.12) 0%, rgba(' + tint + ',0.62) 46%, rgba(' + tint + ',0.96) 100%)';
+  return '<div class="wcard">'
+    + (img ? '<img class="wcard-art" src="' + img + '" alt="" onerror="this.className=\'wcard-art miss\'">' : '')
+    + '<div class="wcard-veil" style="background:' + veil + '"></div>'
+    + '<div class="wcard-mono" style="color:' + ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>'
+    + '<div class="wcard-body">'
+    + '<span class="wc-tag" style="color:' + ink + ';background:rgb(' + tint + ')">' + esc(w.ch) + '</span>'
+    + '<div class="wc-word">' + esc(w.w) + '</div>'
+    + '<div class="wc-foot"><span class="wc-ph">' + esc(w.ph || '') + '</span>'
+    + '<span class="wc-spk" data-act="speak">'
+    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="#007AFF"><path d="M8 5l10 7-10 7z"/></svg>'
+    + '</span></div></div></div>';
+}
 function exBlock(w) {
   if (!w.ex) return '';
   return '<div class="group"><div class="group-title">书中例句</div><div class="card ex-card">'
@@ -480,15 +533,12 @@ function vDetail() {
   const w = cur.word;
   if (!w) return '<div class="empty">未找到该单词</div>';
   const v = lv(w.w);
-  return '<div class="detail">'
-    + '<div class="dword">' + esc(w.w) + '<span class="speak" data-act="speak" title="发音">'
-    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="#007AFF"><path d="M8 5l10 7-10 7z"/></svg></span></div>'
-    + (w.ph ? '<div class="dph">' + esc(w.ph) + '</div>' : '')
-    + '<div class="tags"><span class="tag">' + esc(w.ch) + '</span>'
-    + '<span class="tag">' + (v >= 3 ? '已掌握' : v > 0 ? '复习中' : '未学习') + '</span></div>'
-    + '<div class="dcn">' + esc(w.cn) + '</div></div>'
+  return cardHtml(w)
+    + '<div class="group" style="margin-top:16px"><div class="group-title">释义</div>'
+    + '<div class="card cn-card"><div class="dcn">' + esc(w.cn) + '</div>'
+    + '<div class="tags"><span class="tag">' + (v >= 3 ? '已掌握' : v > 0 ? '复习中' : '未学习') + '</span></div></div></div>'
     + exBlock(w) + drBlock(w)
-    + '<div class="group" style="margin-top:16px">'
+    + '<div class="group">'
     + '<button class="btn btn-primary btn-block" data-act="copy">一键复制（含例句）</button>'
     + '<div class="hero-act">'
     + '<button class="btn btn-plain" data-act="expand">相近词</button>'
@@ -502,15 +552,10 @@ function vExpand() {
   const w = cur.word;
   if (!w) return '<div class="empty">未找到该单词</div>';
   const v = lv(w.w);
-  const img = themeImg(w.ch);
-  return (img ? '<div class="hero-img"><img src="' + img + '" alt="" onerror="this.parentNode.style.display=\'none\'"><div class="mask"></div></div>' : '')
-    + '<div style="padding:0 18px 8px">'
-    + '<div class="dword">' + esc(w.w) + '<span class="speak" data-act="speak" title="发音">'
-    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="#007AFF"><path d="M8 5l10 7-10 7z"/></svg></span></div>'
-    + (w.ph ? '<div class="dph">' + esc(w.ph) + '</div>' : '')
-    + '<div class="dcn">' + esc(w.cn) + '</div>'
-    + '<div class="tags"><span class="tag">' + esc(w.ch) + '</span>'
-    + '<span class="tag">' + (v >= 3 ? '已掌握' : v > 0 ? '复习中' : '未学习') + '</span></div></div>'
+  return cardHtml(w)
+    + '<div class="group" style="margin-top:16px">'
+    + '<div class="card cn-card"><div class="dcn">' + esc(w.cn) + '</div>'
+    + '<div class="tags"><span class="tag">' + (v >= 3 ? '已掌握' : v > 0 ? '复习中' : '未学习') + '</span></div></div></div>'
     + exBlock(w) + drBlock(w) + simList(w, 'sim')
     + '<div class="group"><div class="hero-act" style="margin-top:0">'
     + '<button class="btn btn-plain" data-act="detail">单词详情</button>'
@@ -534,9 +579,17 @@ function vStudy() {
       + '<button class="btn btn-plain btn-block" data-act="home">返回首页</button></div>';
   }
   const w = study.list[study.idx];
+  const tint = CHAPTER_TINT[w.ch] || '238,242,245';
+  const ink = CHAPTER_INK[w.ch] || '#3E4F60';
+  const art = themeImg(w.ch);
+  const veil = 'linear-gradient(180deg, rgba(' + tint + ',0.12) 0%, rgba(' + tint + ',0.62) 46%, rgba(' + tint + ',0.96) 100%)';
   return '<div class="bar-head"><div class="bar"><i style="width:' + (study.idx / study.list.length * 100) + '%"></i></div>'
     + '<div class="bar-txt">' + (study.idx + 1) + ' / ' + study.list.length + '</div></div>'
-    + '<div class="stage"><div class="stage-card" data-act="flip">'
+    + '<div class="stage"><div class="stage-card" data-act="flip" style="position:relative;overflow:hidden">'
+    + (art ? '<img class="stage-art" src="' + art + '" alt="" onerror="this.style.display=\'none\'">' : '')
+    + '<div class="stage-veil" style="background:' + veil + '"></div>'
+    + (study.show ? '' : '<div class="stage-mono" style="color:' + ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>')
+    + '<div style="position:relative;width:100%;display:flex;flex-direction:column;align-items:center">'
     + '<div class="stage-word">' + esc(w.w) + '</div>'
     + (w.ph ? '<div class="stage-ph">' + esc(w.ph) + '</div>' : '')
     + (study.show
@@ -544,7 +597,7 @@ function vStudy() {
         + (w.ex ? '<div class="stage-ex">' + esc(w.ex[0]) + '</div>' : '')
         + '<div class="stage-ch">' + esc(w.ch) + '</div>'
       : '<div class="stage-hint">轻触卡片查看释义</div>')
-    + '</div></div>'
+    + '</div></div></div>'
     + '<div class="actions">'
     + '<button class="btn btn-plain" data-act="unknown">不认识</button>'
     + '<button class="btn btn-primary" data-act="known">认识</button>'
@@ -605,11 +658,11 @@ function vMe() {
     + '<div class="group"><div class="group-title">学习计划</div><div class="card">'
     + '<div class="cell" style="cursor:default"><div class="cell-main">'
     + '<div class="cell-title">每组单词数</div>'
-    + '<div class="cell-sub">1–200 之间，可自行修改</div></div>'
+    + '<div class="cell-sub">最少 1 个，不设上限（最多按词库 ' + WORDS.length + ' 词）</div></div>'
     + '<div class="stepper"><div class="step" data-act="decPlan">−</div>'
-    + '<input class="step-input" type="number" value="' + S.plan + '" readonly>'
+    + '<input class="step-input" type="number" value="' + S.plan + '" data-act="planInput">'
     + '<div class="step" data-act="incPlan">＋</div></div></div>'
-    + '<div class="presets">' + [10, 20, 30, 50, 100].map(n =>
+    + '<div class="presets">' + [10, 20, 30, 50, 100, 200, 500].map(n =>
         '<div class="preset' + (S.plan === n ? ' preset-on' : '') + '" data-plan="' + n + '">' + n + '</div>').join('')
     + '</div>'
     + '<div class="cell" style="cursor:default"><div class="cell-main">'
@@ -645,6 +698,8 @@ function bind(s) {
     S.plan = clampPlan(Number(el.dataset.plan));
     save(); render();
   });
+  const pin = s.querySelector('[data-act="planInput"]');
+  if (pin) pin.onblur = () => { S.plan = clampPlan(pin.value); save(); render(); };
   const q = s.querySelector('#q');
   if (q) q.oninput = () => { cur.keyword = q.value; const st = q.selectionStart; render(); const n = $('screen').querySelector('#q'); if (n) { n.focus(); n.setSelectionRange(st, st); } };
   const ans = s.querySelector('#ans');
@@ -710,8 +765,8 @@ function act(a) {
     if (next) { cur.word = next; return render(); }
     return show('vocab', 'learn');
   }
-  if (a === 'decPlan') { S.plan = clampPlan(S.plan - 5); save(); return render(); }
-  if (a === 'incPlan') { S.plan = clampPlan(S.plan + 5); save(); return render(); }
+  if (a === 'decPlan') { S.plan = clampPlan(S.plan - planStep(S.plan)); save(); return render(); }
+  if (a === 'incPlan') { S.plan = clampPlan(S.plan + planStep(S.plan)); save(); return render(); }
   if (a === 'toggleExpand') { S.showExpand = !S.showExpand; save(); return render(); }
   if (a === 'copy') {
     const t = w ? [w.w + (w.ph ? ' ' + w.ph : ''), w.cn, w.ex ? w.ex[0] : '', w.ex ? w.ex[1] : ''].filter(Boolean).join('\n')

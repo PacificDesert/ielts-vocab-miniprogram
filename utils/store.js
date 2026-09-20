@@ -41,7 +41,8 @@ function load() {
 function clampPlan(n) {
   const v = Math.round(Number(n));
   if (!v || isNaN(v)) return config.DEFAULT_PLAN.perRound;
-  return Math.max(config.PLAN_MIN, Math.min(config.PLAN_MAX, v));
+  // 只保底不限顶：上限由词库总量自然封顶
+  return Math.max(config.PLAN_MIN, v);
 }
 
 function save() {
