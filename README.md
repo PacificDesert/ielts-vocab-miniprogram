@@ -38,12 +38,27 @@
 │   ├── login/                       获取 openid
 │   └── data/                        学习数据读写
 ├── images/tabbar/                   tabBar 图标
+├── preview/
+│   ├── template.html                预览页模板
+│   └── index.html                   浏览器可打开的界面预览（生成物）
 └── tools/
     ├── build_words.py               PDF → data/words.js
     ├── make_phonetic_csv.py         音标源文件 → 可读 CSV
+    ├── build_preview.py             词库 → preview/index.html
     ├── manual_fix.json              OCR 取不到的词条人工校订
     └── make_icons.py                生成 tabBar 图标
 ```
+
+## 界面预览（无需开发者工具）
+
+不想装微信开发者工具、或者只想先看长相，可以直接双击 `preview/index.html` 用浏览器打开。
+它用真实词库渲染，搜索、翻卡、拼写作答、复制单词都能实际操作，进度存在浏览器本地。
+
+```bash
+python tools/build_preview.py     # 词库变动后重新生成
+```
+
+预览只是界面还原，真机运行仍需用微信开发者工具导入本工程。
 
 ## 快速开始
 
