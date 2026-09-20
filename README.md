@@ -40,6 +40,8 @@
 ├── images/tabbar/                   tabBar 图标
 └── tools/
     ├── build_words.py               PDF → data/words.js
+    ├── make_phonetic_csv.py         音标源文件 → 可读 CSV
+    ├── manual_fix.json              OCR 取不到的词条人工校订
     └── make_icons.py                生成 tabBar 图标
 ```
 
@@ -73,14 +75,25 @@ module.exports = {
 
 ```bash
 pip install pymupdf
-python tools/build_words.py "雅思词汇真经.pdf" ecdict.csv
+
+# 1) 下载音标源（约 1.6 MB），转成脚本可读的 CSV
+curl -LO https://raw.githubusercontent.com/open-dict-data/ipa-dict/master/data/en_UK.txt
+python tools/make_phonetic_csv.py en_UK.txt phonetic.csv
+
+# 2) 生成词库（第二个参数可省略，省则音标留空）
+python tools/build_words.py "雅思词汇真经.pdf" phonetic.csv
 ```
 
 `build_words.py` 的取值规则：
 
-- **词表**以 PDF 书签目录（OCR 生成的「单词 + 音标」列表）为准，并合并正文中带音标的独立词条；索引页（书页 312 之后）自动剔除，垃圾词条用词典库做存在性校验。
-- **中文释义**取正文词条首段，过滤掉 `［例］［记］［搭］` 等例句与拓展块。
-- **音标**来自开源词典 [ECDICT](https://github.com/skywind3000/ECDICT)（PDF 的 OCR 音标符号不可靠，未采用）；正文释义缺失时同样用 ECDICT 的中文释义兜底。
+- **词表**以 PDF 书签目录（OCR 生成的「单词 + 音标」列表）为准，并合并正文中带音标的独立词条；
+  书页 312 之后的索引页自动剔除，垃圾词条用音标词典做存在性校验。
+- **章节**按原书目录的 22 个主题划分，书内页码 → PDF 页序号偏移固定为 `+11`（换书需改脚本顶部的 `CHAPTERS` 与 `BOOK_TO_PDF`）。
+- **中文释义**取正文词条首段，过滤掉 `［例］［记］［搭］` 等例句与拓展块，并还原被 OCR 认错的词性标记（`at` / `ai` / `ar` → `adj.`，`m` → `n`）。
+- **音标**来自开源项目 [ipa-dict](https://github.com/open-dict-data/ipa-dict)（PDF 自带的 OCR 音标符号不可靠，未采用）。
+  该数据源的重音符号标注习惯特殊，脚本会做两步规范化：修正「元音 + 重音符号 + 长音符号」错位，再把重音符号左移到音节首；
+  单音节词去掉重音符号，`ɹ→r`、`ɐ→ə`、`ɛ→e`。
+- **人工校订**：OCR 取不到释义或音标的条目写在 `tools/manual_fix.json`（`cn` / `ph` / `drop` 三个字段），生成时自动合并，优先级最高。
 
 词库版权归原书作者与出版社所有，本项目仅用于个人学习，请勿用于商业用途。
 
