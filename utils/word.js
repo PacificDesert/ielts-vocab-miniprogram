@@ -50,10 +50,42 @@ function slice(start, count) {
   return words.list.slice(start, start + count);
 }
 
+/** 章节主题配图 */
+function themeImage(ch) {
+  const i = words.chapters.indexOf(ch);
+  if (i < 0) return '';
+  const n = i + 1;
+  return '/images/theme/' + (n < 10 ? '0' + n : '' + n) + '.jpg';
+}
+
+/** 相近 / 同源词 */
+function similar(it) {
+  if (!it || !it.sim) return [];
+  return it.sim.map(i => words.list[i]).filter(Boolean);
+}
+
+/** 书中例句 */
+function example(it) {
+  if (!it || !it.ex || !it.ex.length) return null;
+  return { en: it.ex[0], zh: it.ex[1] || '' };
+}
+
 /** 格式化复制文本 */
 function copyText(it) {
   const ph = it.ph ? ` ${it.ph}` : '';
   return `${it.w}${ph}\n${it.cn}`;
 }
 
-module.exports = { all, get, chapterList, chapterWords, search, slice, copyText, total: words.list.length };
+/** 拓展页复制文本：单词 + 音标 + 释义 + 例句 */
+function copyFull(it) {
+  const lines = [it.w + (it.ph ? ' ' + it.ph : ''), it.cn];
+  const ex = example(it);
+  if (ex) lines.push(ex.en, ex.zh);
+  return lines.filter(Boolean).join('\n');
+}
+
+module.exports = {
+  all, get, chapterList, chapterWords, search, slice,
+  themeImage, similar, example, copyText, copyFull,
+  total: words.list.length
+};

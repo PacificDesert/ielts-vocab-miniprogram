@@ -21,7 +21,8 @@ def main():
 
     raw = io.open(SRC, encoding='utf-8').read()
     data = json.loads(raw[raw.index('{'): raw.rindex('}') + 1])
-    data['list'] = [{'w': it['w'], 'ph': it['ph'], 'cn': it['cn'], 'ch': it['ch']} for it in data['list']]
+    keep = ('w', 'ph', 'cn', 'ch', 'ex', 'dr', 'sim')
+    data['list'] = [{k: it[k] for k in keep if k in it} for it in data['list']]
 
     payload = json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c')
     html = io.open(TPL, encoding='utf-8').read()

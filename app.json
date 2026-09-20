@@ -5,7 +5,8 @@
     "pages/spell/spell",
     "pages/me/me",
     "pages/study/study",
-    "pages/detail/detail"
+    "pages/detail/detail",
+    "pages/expand/expand"
   ],
   "window": {
     "backgroundTextStyle": "dark",

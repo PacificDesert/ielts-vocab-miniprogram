@@ -16,6 +16,7 @@
         <block wx:if="{{show}}">
           <view class="stage-line"></view>
           <view class="stage-cn">{{cur.cn}}</view>
+          <view class="stage-ex" wx:if="{{cur.ex}}">{{cur.ex[0]}}</view>
           <view class="stage-ch">{{cur.ch}}</view>
         </block>
         <view class="stage-hint" wx:else>轻触卡片查看释义</view>

@@ -37,7 +37,8 @@ Page({
   answer(known) {
     const { cur, idx, list, right, wrong } = this.data;
     if (!cur.w) return;
-    store.markStudy(cur.w, known);
+    const target = cur.w;
+    store.markStudy(target, known);
     const nextIdx = idx + 1;
     const finished = nextIdx >= list.length;
     store.save();
@@ -49,6 +50,10 @@ Page({
     }, () => {
       if (!finished) this.sync();
     });
+    // 认识 → 进入拓展页看例句与相近词（可在「我的」里关闭）
+    if (known && store.get().plan.showExpand) {
+      wx.navigateTo({ url: '/pages/expand/expand?w=' + encodeURIComponent(target) + '&from=study' });
+    }
   },
 
   copy() {

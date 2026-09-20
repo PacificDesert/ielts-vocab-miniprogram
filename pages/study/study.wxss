@@ -23,6 +23,14 @@
 .stage-ph { font-size: 30rpx; color: var(--text2); margin-top: 16rpx; }
 .stage-line { width: 80rpx; height: 2rpx; background: var(--line); margin: 48rpx 0 32rpx; }
 .stage-cn { font-size: 34rpx; line-height: 1.6; text-align: center; }
+.stage-ex {
+  font-size: 26rpx;
+  color: var(--text2);
+  line-height: 1.6;
+  text-align: center;
+  margin-top: 24rpx;
+  padding: 0 8rpx;
+}
 .stage-ch { font-size: 24rpx; color: var(--text3); margin-top: 24rpx; }
 .stage-hint { font-size: 26rpx; color: var(--text3); margin-top: 60rpx; }
 

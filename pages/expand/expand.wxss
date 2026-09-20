@@ -1,0 +1,37 @@
+.expand { padding-bottom: calc(60rpx + env(safe-area-inset-bottom)); }
+
+.hero { position: relative; height: 320rpx; margin-bottom: -48rpx; }
+.hero-img { width: 100%; height: 100%; display: block; }
+.hero-mask {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 160rpx;
+  background: linear-gradient(to bottom, rgba(242,242,247,0), var(--bg));
+}
+
+.head { position: relative; padding: 0 32rpx 8rpx; }
+.wline { display: flex; align-items: center; }
+.word { font-size: 64rpx; font-weight: 700; letter-spacing: -1rpx; }
+.speak {
+  width: 60rpx; height: 60rpx; margin-left: 20rpx; border-radius: 50%;
+  background: rgba(0,122,255,0.12);
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.speak-icon {
+  width: 0; height: 0;
+  border-left: 20rpx solid var(--blue);
+  border-top: 13rpx solid transparent;
+  border-bottom: 13rpx solid transparent;
+  margin-left: 6rpx;
+}
+.ph { font-size: 28rpx; color: var(--text2); margin-top: 8rpx; }
+.cn { font-size: 34rpx; line-height: 1.5; margin-top: 16rpx; }
+.tags { display: flex; gap: 12rpx; margin-top: 20rpx; }
+
+.ex-card { padding: 32rpx; }
+.ex-en { font-size: 32rpx; line-height: 1.6; }
+.ex-zh { font-size: 28rpx; color: var(--text2); line-height: 1.6; margin-top: 16rpx; }
+
+.dr-cn { max-width: 60%; text-align: right; }
+.sim-word { font-size: 32rpx; font-weight: 500; }
+.sim-cn { font-size: 26rpx; color: var(--text2); margin-top: 2rpx; }
+.hint { padding: 12rpx 8rpx 0; font-size: 24rpx; color: var(--text3); }
+.gap { margin-top: 20rpx; }

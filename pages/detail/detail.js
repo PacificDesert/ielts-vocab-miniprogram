@@ -10,7 +10,9 @@ Page({
     ph: '',
     cn: '',
     ch: '',
-    lv: 0
+    lv: 0,
+    ex: null,
+    dr: []
   },
 
   onLoad(query) {
@@ -40,7 +42,9 @@ Page({
       ph: it.ph,
       cn: it.cn,
       ch: it.ch,
-      lv: store.status(it.w)
+      lv: store.status(it.w),
+      ex: word.example(it),
+      dr: it.dr || []
     });
     wx.setNavigationBarTitle({ title: it.w });
   },
@@ -64,16 +68,24 @@ Page({
     const it = word.get(this.data.w);
     if (!it) return;
     wx.setClipboardData({
-      data: word.copyText(it),
-      success: () => wx.showToast({ title: '已复制', icon: 'none' })
+      data: word.copyFull(it),
+      success: () => wx.showToast({ title: '已复制（含例句）', icon: 'none' })
     });
+  },
+
+  onExpand() {
+    wx.navigateTo({ url: '/pages/expand/expand?w=' + encodeURIComponent(this.data.w) + '&from=detail' });
   },
 
   markKnown() {
     store.markStudy(this.data.w, true);
     store.save();
     this.setData({ lv: store.status(this.data.w) });
-    wx.showToast({ title: '已标记为认识', icon: 'none' });
+    if (store.get().plan.showExpand) {
+      this.onExpand();
+    } else {
+      wx.showToast({ title: '已标记为认识', icon: 'none' });
+    }
   },
 
   markUnknown() {

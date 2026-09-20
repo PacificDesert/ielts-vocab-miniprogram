@@ -134,6 +134,26 @@ body{
 .tab.on{color:var(--blue)}
 .tab svg{width:26px;height:26px}
 .empty{padding:60px 0;text-align:center;color:var(--text2);font-size:14px}
+.hero-img{position:relative;height:150px;margin-bottom:-22px;overflow:hidden}
+.hero-img img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-img .mask{position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(to bottom,rgba(242,242,247,0),var(--bg))}
+.ex-card{padding:16px 18px}
+.ex-en{font-size:15px;line-height:1.6}
+.ex-zh{font-size:13px;color:var(--text2);line-height:1.6;margin-top:8px}
+.dr-cn{font-size:13px;color:var(--text2);max-width:58%;text-align:right}
+.stepper{display:flex;align-items:center;background:#EFEFF4;border-radius:8px;overflow:hidden;flex:none}
+.step{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--blue);cursor:pointer;user-select:none}
+.step:active{background:#E3E3E8}
+.step-input{width:52px;height:32px;border:none;outline:none;text-align:center;font-size:15px;background:#fff;color:var(--text);font-family:inherit}
+.presets{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 12px}
+.preset{padding:5px 14px;border-radius:99px;background:#EFEFF4;color:var(--text2);font-size:13px;cursor:pointer}
+.preset-on{background:rgba(0,122,255,.12);color:var(--blue);font-weight:500}
+.switch{width:51px;height:31px;border-radius:99px;background:#E9E9EA;position:relative;cursor:pointer;flex:none;transition:background .2s}
+.switch.on{background:var(--green)}
+.switch i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
+.switch.on i{left:22px}
+.hint{padding:8px 6px 0;font-size:12px;color:var(--text3)}
+.stage-ex{font-size:12px;color:var(--text2);line-height:1.6;margin-top:10px;text-align:center}
 .toast{
   position:absolute;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;
   font-size:13px;padding:9px 16px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;z-index:9;
@@ -165,15 +185,18 @@ body{
     <h2>可以试这些</h2>
     <ul>
       <li>「词库」里搜 <span class="k">volcano</span> 或 <span class="k">火山</span></li>
-      <li>点任意单词进详情，按 <b>一键复制</b> 再粘贴看看</li>
-      <li>详情页点 <b>▶</b> 听发音（用浏览器语音合成）</li>
-      <li>「拼写」里看中文释义默写英文</li>
-      <li>「学习」→ 继续学习，翻卡标记认识 / 不认识</li>
-      <li>学习进度会存在浏览器本地，刷新不丢</li>
+      <li>点任意单词进详情，按 <b>一键复制</b> 再粘贴看看（已含例句）</li>
+      <li><b>认识</b> 一下，会直接跳到「单词拓展」页：章节配图 + 书中例句 + 词形拓展 + 相近单词</li>
+      <li>拓展页点相近词可以一直联想下去，长按复制</li>
+      <li>「我的」里 <b>每组单词数</b> 可以自己改（1–200），下面还有预设胶囊</li>
+      <li>嫌拓展页打扰？「我的」里关掉「认识后看拓展」即可</li>
+      <li>详情页点 <b>▶</b> 听发音（浏览器语音合成）</li>
+      <li>学习进度存在浏览器本地，刷新不丢</li>
     </ul>
     <h2>和真机的差异</h2>
     <ul>
       <li>真机需用<b>微信开发者工具</b>打开工程运行</li>
+      <li>章节配图用相对路径加载，独立打开可能不显示</li>
       <li>云端同步按钮在预览里是禁用状态（没有云环境）</li>
       <li>真机发音走有道词典接口，预览里用系统语音代替</li>
     </ul>
@@ -195,7 +218,7 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
-  return { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: 20 };
+  return { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: 20, showExpand: true };
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
@@ -258,6 +281,10 @@ function toast(msg) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function clampPlan(n) {
+  if (!n || isNaN(n)) return 20;
+  return Math.max(1, Math.min(200, Math.round(n)));
+}
 function speak(w) {
   try {
     const u = new SpeechSynthesisUtterance(w);
@@ -298,7 +325,7 @@ let study = null, spell = null;
 function renderTabs() {
   $('tabbar').innerHTML = TABS.map(t => {
     const on = (t.id === 'learn' && (cur.screen === 'learn' || cur.screen === 'study'))
-      || (t.id === 'vocab' && (cur.screen === 'vocab' || cur.screen === 'detail'))
+      || (t.id === 'vocab' && (cur.screen === 'vocab' || cur.screen === 'detail' || cur.screen === 'expand'))
       || (t.id === cur.screen);
     return '<div class="tab' + (on ? ' on' : '') + '" data-tab="' + t.id + '">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">' + ICONS[t.icon] + '</svg>'
@@ -325,7 +352,7 @@ function show(screen, back) {
 function render() {
   const s = $('screen');
   const nav = $('navTitle');
-  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', study: '记忆单词', spell: '拼写自测', me: '我的' };
+  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', expand: '单词拓展', study: '记忆单词', spell: '拼写自测', me: '我的' };
   nav.textContent = titles[cur.screen] || '雅思词汇';
   let backBtn = $('nav').querySelector('.back');
   if (backBtn) backBtn.remove();
@@ -336,7 +363,7 @@ function render() {
     b.onclick = () => show(cur.back);
     $('nav').prepend(b);
   }
-  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, study: vStudy, spell: vSpell, me: vMe }[cur.screen])();
+  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, expand: vExpand, study: vStudy, spell: vSpell, me: vMe }[cur.screen])();
   bind(s);
   renderTabs();
   s.scrollTop = 0;
@@ -420,6 +447,36 @@ function search(kw) {
   return a.concat(b).slice(0, 80);
 }
 
+function themeImg(ch) {
+  const i = CHAPTERS.indexOf(ch);
+  if (i < 0) return '';
+  const n = i + 1;
+  return '../images/theme/' + (n < 10 ? '0' + n : '' + n) + '.jpg';
+}
+function exBlock(w) {
+  if (!w.ex) return '';
+  return '<div class="group"><div class="group-title">书中例句</div><div class="card ex-card">'
+    + '<div class="ex-en">' + esc(w.ex[0]) + '</div>'
+    + (w.ex[1] ? '<div class="ex-zh">' + esc(w.ex[1]) + '</div>' : '')
+    + '</div></div>';
+}
+function drBlock(w) {
+  if (!w.dr || !w.dr.length) return '';
+  return '<div class="group"><div class="group-title">词形拓展</div><div class="card">'
+    + w.dr.map(d => '<div class="cell"><div class="cell-main"><div class="cell-title">' + esc(d[0])
+      + '</div></div><div class="dr-cn">' + esc(d[1]) + '</div></div>').join('')
+    + '</div></div>';
+}
+function simList(w, act) {
+  const list = (w.sim || []).map(i => WORDS[i]).filter(Boolean);
+  if (!list.length) return '';
+  return '<div class="group"><div class="group-title">相近单词</div><div class="card">'
+    + list.map(o => '<div class="cell" data-sim="' + esc(o.w) + '" data-act="' + act + '"><div class="cell-main">'
+      + '<div class="cell-title">' + esc(o.w) + '</div>'
+      + '<div class="cell-sub">' + esc(o.cn) + '</div></div><div class="chev"></div></div>').join('')
+    + '</div><div class="hint">点任意词继续联想</div></div>';
+}
+
 function vDetail() {
   const w = cur.word;
   if (!w) return '<div class="empty">未找到该单词</div>';
@@ -431,13 +488,37 @@ function vDetail() {
     + '<div class="tags"><span class="tag">' + esc(w.ch) + '</span>'
     + '<span class="tag">' + (v >= 3 ? '已掌握' : v > 0 ? '复习中' : '未学习') + '</span></div>'
     + '<div class="dcn">' + esc(w.cn) + '</div></div>'
+    + exBlock(w) + drBlock(w)
     + '<div class="group" style="margin-top:16px">'
-    + '<button class="btn btn-primary btn-block" data-act="copy">一键复制</button>'
+    + '<button class="btn btn-primary btn-block" data-act="copy">一键复制（含例句）</button>'
     + '<div class="hero-act">'
+    + '<button class="btn btn-plain" data-act="expand">相近词</button>'
     + '<button class="btn btn-plain" data-act="unknown">不认识</button>'
     + '<button class="btn btn-ghost" data-act="known">认识</button>'
     + '</div></div>'
     + '<div class="link" data-act="next">下一个单词 ›</div>';
+}
+
+function vExpand() {
+  const w = cur.word;
+  if (!w) return '<div class="empty">未找到该单词</div>';
+  const v = lv(w.w);
+  const img = themeImg(w.ch);
+  return (img ? '<div class="hero-img"><img src="' + img + '" alt="" onerror="this.parentNode.style.display=\'none\'"><div class="mask"></div></div>' : '')
+    + '<div style="padding:0 18px 8px">'
+    + '<div class="dword">' + esc(w.w) + '<span class="speak" data-act="speak" title="发音">'
+    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="#007AFF"><path d="M8 5l10 7-10 7z"/></svg></span></div>'
+    + (w.ph ? '<div class="dph">' + esc(w.ph) + '</div>' : '')
+    + '<div class="dcn">' + esc(w.cn) + '</div>'
+    + '<div class="tags"><span class="tag">' + esc(w.ch) + '</span>'
+    + '<span class="tag">' + (v >= 3 ? '已掌握' : v > 0 ? '复习中' : '未学习') + '</span></div></div>'
+    + exBlock(w) + drBlock(w) + simList(w, 'sim')
+    + '<div class="group"><div class="hero-act" style="margin-top:0">'
+    + '<button class="btn btn-plain" data-act="detail">单词详情</button>'
+    + '<button class="btn btn-ghost" data-act="copy">复制</button></div>'
+    + '<div style="height:10px"></div>'
+    + '<button class="btn btn-primary btn-block" data-act="expandNext">'
+    + (cur.expandFrom === 'study' ? '继续学习' : '看下一个相近词') + '</button></div>';
 }
 
 function vStudy() {
@@ -460,7 +541,9 @@ function vStudy() {
     + '<div class="stage-word">' + esc(w.w) + '</div>'
     + (w.ph ? '<div class="stage-ph">' + esc(w.ph) + '</div>' : '')
     + (study.show
-      ? '<div class="stage-line"></div><div class="stage-cn">' + esc(w.cn) + '</div><div class="stage-ch">' + esc(w.ch) + '</div>'
+      ? '<div class="stage-line"></div><div class="stage-cn">' + esc(w.cn) + '</div>'
+        + (w.ex ? '<div class="stage-ex">' + esc(w.ex[0]) + '</div>' : '')
+        + '<div class="stage-ch">' + esc(w.ch) + '</div>'
       : '<div class="stage-hint">轻触卡片查看释义</div>')
     + '</div></div>'
     + '<div class="actions">'
@@ -521,8 +604,19 @@ function vMe() {
     + '<div class="cell"><div class="cell-main"><div class="cell-title">拼写正确率</div></div><div class="cell-value">' + st.accuracy + '%</div></div>'
     + '</div></div>'
     + '<div class="group"><div class="group-title">学习计划</div><div class="card">'
-    + '<div class="cell" data-act="plan"><div class="cell-main"><div class="cell-title">每组单词数</div></div>'
-    + '<div class="cell-value">' + S.plan + ' 个</div><div class="chev"></div></div>'
+    + '<div class="cell" style="cursor:default"><div class="cell-main">'
+    + '<div class="cell-title">每组单词数</div>'
+    + '<div class="cell-sub">1–200 之间，可自行修改</div></div>'
+    + '<div class="stepper"><div class="step" data-act="decPlan">−</div>'
+    + '<input class="step-input" type="number" value="' + S.plan + '" readonly>'
+    + '<div class="step" data-act="incPlan">＋</div></div></div>'
+    + '<div class="presets">' + [10, 20, 30, 50, 100].map(n =>
+        '<div class="preset' + (S.plan === n ? ' preset-on' : '') + '" data-plan="' + n + '">' + n + '</div>').join('')
+    + '</div>'
+    + '<div class="cell" style="cursor:default"><div class="cell-main">'
+    + '<div class="cell-title">认识后看拓展</div>'
+    + '<div class="cell-sub">标记「认识」后展示例句与相近单词</div></div>'
+    + '<div class="switch' + (S.showExpand ? ' on' : '') + '" data-act="toggleExpand"><i></i></div></div>'
     + '</div></div>'
     + '<div class="group"><div class="group-title">云端同步（真机功能）</div><div class="card">'
     + '<div class="cell"><div class="cell-main"><div class="cell-title">云开发环境</div>'
@@ -543,6 +637,14 @@ function bind(s) {
   s.querySelectorAll('[data-w]').forEach(el => el.onclick = () => {
     cur.word = byWord[el.dataset.w.toLowerCase()];
     show('detail', cur.screen === 'detail' ? 'vocab' : cur.screen);
+  });
+  s.querySelectorAll('[data-sim]').forEach(el => el.onclick = () => {
+    cur.word = byWord[el.dataset.sim.toLowerCase()];
+    render();
+  });
+  s.querySelectorAll('[data-plan]').forEach(el => el.onclick = () => {
+    S.plan = clampPlan(Number(el.dataset.plan));
+    save(); render();
   });
   const q = s.querySelector('#q');
   if (q) q.oninput = () => { cur.keyword = q.value; const st = q.selectionStart; render(); const n = $('screen').querySelector('#q'); if (n) { n.focus(); n.setSelectionRange(st, st); } };
@@ -572,23 +674,49 @@ function act(a) {
   if (a === 'known' || a === 'unknown') {
     const known = a === 'known';
     if (cur.screen === 'study') {
-      mark(study.list[study.idx].w, known ? 1 : -5, known);
+      const target = study.list[study.idx].w;
+      mark(target, known ? 1 : -5, known);
       day().learn++;
       if (known) study.right++; else study.wrong++;
       study.idx++;
       study.show = false;
       if (study.idx >= study.list.length) study.done = true;
-      save(); return render();
+      save();
+      if (known && S.showExpand) {
+        cur.word = byWord[target.toLowerCase()];
+        cur.expandFrom = 'study';
+        return show('expand', 'study');
+      }
+      return render();
     }
-    if (cur.screen === 'detail') {
+    if (cur.screen === 'detail' || cur.screen === 'expand') {
       mark(w.w, known ? 1 : -1, known);
       day().learn++; save();
+      if (known && S.showExpand && cur.screen === 'detail') {
+        cur.expandFrom = 'detail';
+        return show('expand', 'vocab');
+      }
       toast(known ? '已标记认识' : '已标记不认识');
       return render();
     }
   }
+  if (a === 'expand') {
+    cur.expandFrom = 'detail';
+    return show('expand', 'vocab');
+  }
+  if (a === 'detail') return show('detail', 'vocab');
+  if (a === 'expandNext') {
+    if (cur.expandFrom === 'study') { study.show = false; return show('study', 'learn'); }
+    const next = (cur.word.sim || []).map(i => WORDS[i])[0];
+    if (next) { cur.word = next; return render(); }
+    return show('vocab', 'learn');
+  }
+  if (a === 'decPlan') { S.plan = clampPlan(S.plan - 5); save(); return render(); }
+  if (a === 'incPlan') { S.plan = clampPlan(S.plan + 5); save(); return render(); }
+  if (a === 'toggleExpand') { S.showExpand = !S.showExpand; save(); return render(); }
   if (a === 'copy') {
-    const t = w ? (w.w + (w.ph ? ' ' + w.ph : '') + '\n' + w.cn) : (study ? study.list[study.idx].w : '');
+    const t = w ? [w.w + (w.ph ? ' ' + w.ph : ''), w.cn, w.ex ? w.ex[0] : '', w.ex ? w.ex[1] : ''].filter(Boolean).join('\n')
+      : (study ? study.list[study.idx].w : '');
     return copy(t);
   }
   if (a === 'copyspell') return copy(spell.list[spell.idx].w);
@@ -607,14 +735,9 @@ function act(a) {
     if (spell.idx >= spell.list.length) spell.done = true;
     return render();
   }
-  if (a === 'plan') {
-    const opts = [10, 20, 30, 50, 100];
-    S.plan = opts[(opts.indexOf(S.plan) + 1) % opts.length];
-    save(); return render();
-  }
-  if (a === 'about') return toast('3328 词 · 22 章节 · 源自《雅思词汇真经》');
+  if (a === 'about') return toast('3328 词 · 22 章节 · 3000+ 条书中例句');
   if (a === 'reset') {
-    S = { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: 20 };
+    S = { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: S.plan, showExpand: S.showExpand };
     save(); return render();
   }
 }

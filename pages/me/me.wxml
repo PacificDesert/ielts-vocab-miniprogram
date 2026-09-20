@@ -22,13 +22,40 @@
   <view class="group">
     <view class="group-title">学习计划</view>
     <view class="card">
-      <picker mode="selector" range="{{plans}}" value="{{planIndex}}" bindchange="onPlanChange">
-        <view class="cell">
-          <view class="cell-main"><view class="cell-title">每组单词数</view></view>
-          <view class="cell-value">{{plans[planIndex]}} 个</view>
-          <view class="chevron"></view>
+      <view class="cell plan-cell">
+        <view class="cell-main">
+          <view class="cell-title">每组单词数</view>
+          <view class="cell-sub">{{min}}–{{max}} 之间，可自行修改</view>
         </view>
-      </picker>
+        <view class="stepper">
+          <view class="step" hover-class="btn-hover" bindtap="decPlan">−</view>
+          <input
+            class="step-input mono"
+            type="number"
+            value="{{planInput}}"
+            bindinput="onPlanInput"
+            bindblur="onPlanBlur"
+            bindconfirm="onPlanBlur"
+          />
+          <view class="step" hover-class="btn-hover" bindtap="incPlan">＋</view>
+        </view>
+      </view>
+      <view class="presets">
+        <view
+          class="preset {{plan.perRound === item ? 'preset-on' : ''}}"
+          wx:for="{{presets}}"
+          wx:key="*this"
+          data-n="{{item}}"
+          bindtap="onPreset"
+        >{{item}}</view>
+      </view>
+      <view class="cell">
+        <view class="cell-main">
+          <view class="cell-title">认识后看拓展</view>
+          <view class="cell-sub">标记「认识」后展示书中例句与相近单词</view>
+        </view>
+        <switch checked="{{plan.showExpand}}" color="#007AFF" bindchange="onToggleExpand" />
+      </view>
     </view>
   </view>
 

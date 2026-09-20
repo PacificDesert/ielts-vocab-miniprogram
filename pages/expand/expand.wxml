@@ -1,0 +1,76 @@
+<view class="page expand">
+
+  <view class="hero" wx:if="{{img}}">
+    <image class="hero-img" src="{{img}}" mode="aspectFill" lazy-load="{{true}}" />
+    <view class="hero-mask"></view>
+  </view>
+
+  <view class="head">
+    <view class="wline">
+      <text class="word">{{cur.w}}</text>
+      <view class="speak" hover-class="btn-hover" bindtap="onSpeak">
+        <view class="speak-icon"></view>
+      </view>
+    </view>
+    <view class="ph" wx:if="{{cur.ph}}">{{cur.ph}}</view>
+    <view class="cn">{{cur.cn}}</view>
+    <view class="tags">
+      <text class="tag">{{cur.ch}}</text>
+      <text class="tag" wx:if="{{lv >= 3}}">已掌握</text>
+      <text class="tag" wx:elif="{{lv > 0}}">复习中</text>
+    </view>
+  </view>
+
+  <view class="group" wx:if="{{ex}}">
+    <view class="group-title">书中例句</view>
+    <view class="card ex-card">
+      <view class="ex-en">{{ex.en}}</view>
+      <view class="ex-zh" wx:if="{{ex.zh}}">{{ex.zh}}</view>
+    </view>
+  </view>
+
+  <view class="group" wx:if="{{dr.length}}">
+    <view class="group-title">词形拓展</view>
+    <view class="card">
+      <view class="cell" wx:for="{{dr}}" wx:key="0">
+        <view class="cell-main">
+          <view class="cell-title">{{item[0]}}</view>
+        </view>
+        <view class="cell-value dr-cn">{{item[1]}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="group" wx:if="{{sim.length}}">
+    <view class="group-title">相近单词</view>
+    <view class="card">
+      <view
+        class="cell"
+        wx:for="{{sim}}"
+        wx:key="w"
+        data-w="{{item.w}}"
+        bindtap="onSimilar"
+        bindlongpress="onCopy"
+      >
+        <view class="cell-main">
+          <view class="sim-word">{{item.w}}</view>
+          <view class="sim-cn">{{item.cn}}</view>
+        </view>
+        <view class="chevron"></view>
+      </view>
+    </view>
+    <view class="hint">点任意词可继续联想，长按复制</view>
+  </view>
+
+  <view class="group">
+    <view class="btn-row">
+      <view class="btn btn-plain" hover-class="btn-hover" bindtap="onDetail">单词详情</view>
+      <view class="btn btn-ghost" hover-class="btn-hover" bindtap="onCopy">复制</view>
+    </view>
+    <view class="btn btn-primary btn-block gap" hover-class="btn-hover" bindtap="onNext">
+      {{from === 'study' ? '继续学习' : '看下一个相近词'}}
+    </view>
+    <view class="btn btn-plain btn-block gap" wx:if="{{from !== 'study'}}" hover-class="btn-hover" bindtap="onKnow">标记为认识</view>
+  </view>
+
+</view>

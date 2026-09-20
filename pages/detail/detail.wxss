@@ -21,6 +21,10 @@
 .tags { margin-top: 24rpx; display: flex; gap: 12rpx; }
 .cn-card { padding: 32rpx; }
 .cn { font-size: 34rpx; line-height: 1.6; }
+.ex-card { padding: 32rpx; }
+.ex-en { font-size: 32rpx; line-height: 1.6; }
+.ex-zh { font-size: 28rpx; color: var(--text2); line-height: 1.6; margin-top: 16rpx; }
+.dr-cn { max-width: 60%; text-align: right; }
 .gap { margin-top: 20rpx; }
 .pager {
   display: flex;

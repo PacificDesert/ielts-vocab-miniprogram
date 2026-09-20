@@ -26,7 +26,22 @@ function load() {
   if (cached && typeof cached === 'object') {
     Object.assign(state, cached);
   }
+  // 兼容旧版本的分字段计划（newPerDay / spellPerDay）→ perRound
+  const old = state.plan || {};
+  state.plan = Object.assign({}, config.DEFAULT_PLAN, old);
+  if (!old.perRound && (old.newPerDay || old.spellPerDay)) {
+    state.plan.perRound = old.newPerDay || old.spellPerDay;
+  }
+  delete state.plan.newPerDay;
+  delete state.plan.spellPerDay;
+  state.plan.perRound = clampPlan(state.plan.perRound);
   return state;
+}
+
+function clampPlan(n) {
+  const v = Math.round(Number(n));
+  if (!v || isNaN(v)) return config.DEFAULT_PLAN.perRound;
+  return Math.max(config.PLAN_MIN, Math.min(config.PLAN_MAX, v));
 }
 
 function save() {
@@ -73,11 +88,18 @@ function status(word) {
   return m.lv;
 }
 
+/** 每组单词数（用户自定义，越界会被夹到合法范围） */
+function perRound() {
+  const n = Number(state.plan.perRound);
+  if (!n || isNaN(n)) return config.DEFAULT_PLAN.perRound;
+  return Math.max(config.PLAN_MIN, Math.min(config.PLAN_MAX, Math.round(n)));
+}
+
 /** 取下一批新词 */
 function nextLearnBatch(count) {
   const list = require('./word').all();
   const batch = [];
-  const n = Math.min(count || state.plan.newPerDay, list.length);
+  const n = Math.min(count || perRound(), list.length);
   let guard = 0;
   while (batch.length < n && guard < list.length * 2) {
     guard += 1;
@@ -97,9 +119,10 @@ function nextSpellBatch(count) {
     const lv = status(it.w);
     return lv > 0 && lv < 5;
   });
-  const pool = learned.length >= (count || state.plan.spellPerDay) ? learned : list;
+  const n0 = count || perRound();
+  const pool = learned.length >= n0 ? learned : list;
   const batch = [];
-  const n = Math.min(count || state.plan.spellPerDay, pool.length);
+  const n = Math.min(n0, pool.length);
   while (batch.length < n) {
     if (state.spellCursor >= pool.length) state.spellCursor = 0;
     batch.push(pool[state.spellCursor]);
@@ -147,7 +170,17 @@ function streak() {
 
 function setPlan(patch) {
   Object.assign(state.plan, patch);
+  state.plan.perRound = clampPlan(state.plan.perRound);
   save();
+  return state.plan;
+}
+
+function setPerRound(n) {
+  return setPlan({ perRound: n });
+}
+
+function toggleExpand(on) {
+  return setPlan({ showExpand: !!on });
 }
 
 /** 云端同步 */
@@ -178,6 +211,7 @@ function reset() {
 
 module.exports = {
   load, save, flush, get, today, day, status, stats, streak,
-  markStudy, markSpell, nextLearnBatch, nextSpellBatch, setPlan,
+  markStudy, markSpell, nextLearnBatch, nextSpellBatch,
+  setPlan, setPerRound, toggleExpand, perRound, clampPlan,
   push, pull, reset, MASTER_LV
 };

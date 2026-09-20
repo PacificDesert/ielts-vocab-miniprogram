@@ -10,9 +10,11 @@ module.exports = {
   // 加入 downloadFile / request 合法域名，或在开发者工具里勾选「不校验合法域名」。
   AUDIO_API: 'https://dict.youdao.com/dictvoice?type=2&audio=',
 
-  // 每日学习计划默认值
+  // 每组学习计划默认值（用户可在「我的」里自行修改，范围见 PLAN_MIN / PLAN_MAX）
   DEFAULT_PLAN: {
-    newPerDay: 20,
-    spellPerDay: 20
-  }
+    perRound: 20,
+    showExpand: true
+  },
+  PLAN_MIN: 1,
+  PLAN_MAX: 200
 };

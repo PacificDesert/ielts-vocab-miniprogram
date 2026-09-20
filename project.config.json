@@ -14,5 +14,16 @@
     "ignoreDevUnusedFiles": false,
     "packNpmManually": false
   },
+  "packOptions": {
+    "ignore": [
+      { "type": "folder", "value": "preview" },
+      { "type": "folder", "value": "tools" },
+      { "type": "folder", "value": "cloudfunctions" },
+      { "type": "file", "value": "README.md" },
+      { "type": "file", "value": "LICENSE" },
+      { "type": "file", "value": ".gitignore" },
+      { "type": "file", "value": ".gitattributes" }
+    ]
+  },
   "condition": {}
 }
