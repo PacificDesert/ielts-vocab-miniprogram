@@ -47,8 +47,11 @@ body.dark .side{color:#E6E6E6}
 body.dark .side code,body.dark .side .k{background:#1F2024;color:#DCDCE0}
 body.dark .side h1{color:#fff}
 .wrap{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+/* 关键：文字颜色挂在带 data-theme 的这一层。
+   没有显式写 color 的文字（大单词、释义、标题、统计数字……）会从 body 继承浏览器默认的黑色，
+   深色模式下就变成黑字压黑底。把 color 放在 .phone（与 .t-dark 同一元素）即可取到正确的 --text。 */
 .phone{
-  width:390px;height:790px;background:var(--bg);border-radius:44px;border:9px solid #1c1c1e;
+  width:390px;height:790px;background:var(--bg);color:var(--text);border-radius:44px;border:9px solid #1c1c1e;
   box-shadow:0 18px 48px rgba(0,0,0,.28);position:relative;overflow:hidden;display:flex;flex-direction:column;
 }
 .status{

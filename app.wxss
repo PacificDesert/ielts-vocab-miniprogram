@@ -68,9 +68,14 @@ page {
 
 view, text, input, textarea, button { box-sizing: border-box; }
 
+/* 关键：文字颜色必须挂在带主题类的这一层。
+   没有显式写 color 的文字（大单词、释义、标题、统计数字……）都从 page 继承，
+   而 page 上的 --text 在「手动深色 + 系统浅色」时仍是深色值，会导致黑字压在黑底上。
+   把 color 放到 .page（与 .t-dark / .t-light 同一个元素）就能取到正确的 --text。 */
 .page {
   min-height: 100vh;
   background: var(--bg);
+  color: var(--text);
   padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 
