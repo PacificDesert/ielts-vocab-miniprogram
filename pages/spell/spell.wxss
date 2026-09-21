@@ -34,6 +34,17 @@
   line-height: 1;
   opacity: 0.12;
 }
+/* 左上角「上一个单词」标记（含词形）：小字、不抢主体 */
+.stage-prev {
+  position: absolute;
+  left: 28rpx;
+  top: 24rpx;
+  right: 28rpx;
+  font-size: 20rpx;
+  line-height: 1.35;
+  text-align: left;
+  word-break: break-word;
+}
 
 .quiz { position: relative; padding: 100rpx 48rpx 90rpx; text-align: center; }
 .quiz-cn { font-size: 40rpx; line-height: 1.5; }

@@ -191,25 +191,27 @@ button, input, textarea { font-family: inherit; }
 }
 
 /* 翻书动画：换词时把「书页」从装订边翻过去，再翻下一页回来
-   用法：<view class="turn-wrap {{turn}}">...</view>
-   turn 取 turn-out-next / turn-in-next / turn-out-prev / turn-in-prev */
+   用法：<view class="turn-wrap {{turn}}" style="{{turnCss}}">...</view>
+   turn 取 turn-out-next / turn-in-next / turn-out-prev / turn-in-prev
+   --turn-out-ms / --turn-in-ms 可由页面覆盖（utils/flip.js 的 turnTo 第三参数），
+   默认 0.2s / 0.4s；拼写页答对后翻页更慢就是靠它 */
 .turn-wrap { position: relative; }
 
 .turn-out-next {
   transform-origin: left center;
-  animation: turnOutNext 0.2s ease-in both;
+  animation: turnOutNext var(--turn-out-ms, 0.2s) ease-in both;
 }
 .turn-in-next {
   transform-origin: left center;
-  animation: turnInNext 0.4s cubic-bezier(0.22, 0.68, 0.24, 1) backwards;
+  animation: turnInNext var(--turn-in-ms, 0.4s) cubic-bezier(0.22, 0.68, 0.24, 1) backwards;
 }
 .turn-out-prev {
   transform-origin: right center;
-  animation: turnOutPrev 0.2s ease-in both;
+  animation: turnOutPrev var(--turn-out-ms, 0.2s) ease-in both;
 }
 .turn-in-prev {
   transform-origin: right center;
-  animation: turnInPrev 0.4s cubic-bezier(0.22, 0.68, 0.24, 1) backwards;
+  animation: turnInPrev var(--turn-in-ms, 0.4s) cubic-bezier(0.22, 0.68, 0.24, 1) backwards;
 }
 
 @keyframes turnOutNext {

@@ -2,6 +2,9 @@ const store = require('../../utils/store');
 const word = require('../../utils/word');
 const flip = require('../../utils/flip');
 
+/** 答对后翻页要比平时慢一些，让人来得及看一眼上一个单词的标记 */
+const SLOW_TURN = { out: 420, in: 700 };
+
 function buildMask(text, reveal) {
   let i = 0;
   return String(text).split('').map(ch => {
@@ -20,6 +23,8 @@ Page(flip.mixin({
     idx: 0,
     cur: {},
     card: {},
+    prevTag: '',
+    slowTurn: null,
     input: '',
     mask: '',
     reveal: 0,
@@ -63,10 +68,13 @@ Page(flip.mixin({
   },
 
   sync() {
-    const cur = this.data.list[this.data.idx] || {};
+    const { list, idx } = this.data;
+    const cur = list[idx] || {};
     this.setData({
       cur,
       card: cur.w ? word.card(cur.ch, cur.w, this.data.dark) : {},
+      // 左上角标记上一个单词：拼写 + 音标 + 中文 + 词形；第一个为空（不显示）
+      prevTag: word.prevTag(list, idx - 1, { forms: true }),
       input: '',
       checked: false,
       ok: false,
@@ -101,6 +109,8 @@ Page(flip.mixin({
     this.setData({
       checked: true,
       ok,
+      // 答对：翻页慢一些；答错／跳过：用标准速度
+      slowTurn: ok ? SLOW_TURN : null,
       right: this.data.right + (ok ? 1 : 0),
       wrong: this.data.wrong + (ok ? 0 : 1)
     });
@@ -115,6 +125,7 @@ Page(flip.mixin({
     this.setData({
       checked: true,
       ok: false,
+      slowTurn: null,
       wrong: this.data.wrong + 1
     });
   },
@@ -125,7 +136,8 @@ Page(flip.mixin({
       this.setData({ done: true, acc: this.accuracy() });
       return;
     }
-    this.turnTo('next', () => this.setData({ idx: n }, () => this.sync()));
+    // 答对时用更慢的翻页，让人看清左上角上一个单词的标记
+    this.turnTo('next', () => this.setData({ idx: n }, () => this.sync()), this.data.slowTurn);
   },
 
   accuracy() {

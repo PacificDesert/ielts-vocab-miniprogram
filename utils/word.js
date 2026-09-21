@@ -146,6 +146,40 @@ function similar(it) {
   return it.sim.map(i => words.list[i]).filter(Boolean);
 }
 
+/**
+ * 词形拓展：把 dr 的 [词, 释义] 合并成一行展示文本，如 "shallow-hearted 薄情的"。
+ * 没有词形拓展（或释义为空）时返回 ''。
+ */
+function forms(it, sep) {
+  if (!it || !it.dr || !it.dr.length) return '';
+  const s = sep === undefined ? ' ' : sep;
+  return it.dr.map(p => {
+    const w = String(p[0] || '').trim();
+    const cn = String(p[1] || '').trim();
+    if (w && cn) return w + s + cn;
+    return w || cn;
+  }).filter(Boolean).join(' / ');
+}
+
+/**
+ * 上一张卡片左上角的标记，如 "thermal /ˈθɜːməl/ adj. 热量的"。
+ * 只传下标（不传单词），越界或无效一律返回 '' —— 第一个单词天然是空的。
+ * opts.forms = true 时额外拼上词形拓展（拼写页用）。
+ */
+function prevTag(list, prevIdx, opts) {
+  const it = (list || [])[prevIdx];
+  if (!it || !it.w) return '';
+  const sep = ' ';
+  let out = it.w;
+  if (it.ph) out += sep + it.ph;
+  if (it.cn) out += sep + it.cn;
+  if (opts && opts.forms) {
+    const f = forms(it, sep);
+    if (f) out += sep + f;
+  }
+  return out;
+}
+
 /** 书中例句 */
 function example(it) {
   if (!it || !it.ex || !it.ex.length) return null;
@@ -154,6 +188,6 @@ function example(it) {
 
 module.exports = {
   all, get, chapterList, chapterWords, search, slice,
-  themeImage, card, similar, example,
+  themeImage, card, similar, forms, prevTag, example,
   total: words.list.length
 };

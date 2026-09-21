@@ -8,11 +8,14 @@
       <view class="bar-text">{{idx + 1}} / {{list.length}}</view>
     </view>
 
-    <view class="turn-wrap {{turn}}">
+    <view class="turn-wrap {{turn}}" style="{{turnCss}}">
       <view class="stage" bindtap="flip">
         <view class="stage-card">
           <image class="stage-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" />
           <view class="stage-veil" style="background:{{card.veil}}"></view>
+
+          <!-- 左上角：上一个单词的拼写 / 音标 / 中文释义（第一个单词不显示） -->
+          <view class="stage-prev" style="color:{{card.fg2}}" wx:if="{{prevTag}}">{{prevTag}}</view>
 
           <!-- 轻触卡片：正面翻到背面，像翻一张单词卡 -->
           <view class="flip-box {{show ? 'flip-on' : ''}}">

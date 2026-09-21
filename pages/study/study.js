@@ -11,7 +11,9 @@ Page(flip.mixin({
     right: 0,
     wrong: 0,
     cur: {},
-    card: {}
+    card: {},
+    prevTag: '',
+    turnSpeed: null
   },
 
   onLoad(q) {
@@ -44,9 +46,12 @@ Page(flip.mixin({
   },
 
   sync() {
-    const cur = this.data.list[this.data.idx] || {};
+    const { list, idx } = this.data;
+    const cur = list[idx] || {};
     this.setData({
       cur,
+      // 左上角标记上一个单词的拼写 / 音标 / 中文释义；第一个单词为空（不显示）
+      prevTag: word.prevTag(list, idx - 1),
       show: false,
       card: cur.w ? word.card(cur.ch, cur.w, this.data.dark) : {}
     });
@@ -56,17 +61,26 @@ Page(flip.mixin({
     this.setData({ show: !this.data.show });
   },
 
+  /**
+   * 换词的翻书速度：默认跟随 utils/flip 的标准时长；
+   * 打了哪一档（data.turnSpeed）就用哪一档，用于「认识」和「不认识」区分快慢。
+   */
+  turnSpeed() {
+    return this.data.turnSpeed || undefined;
+  },
+
   onKnow() {
-    this.answer(true);
+    this.answer(true, { out: 420, in: 680 });
   },
 
   onUnknown() {
     this.answer(false);
   },
 
-  answer(known) {
+  answer(known, speed) {
     const { cur, idx, list, right, wrong } = this.data;
     if (!cur.w) return;
+    this.setData({ turnSpeed: speed || null });
     const target = cur.w;
     store.markStudy(target, known);
     const nextIdx = idx + 1;
@@ -90,7 +104,7 @@ Page(flip.mixin({
       wx.navigateTo({ url: '/pages/expand/expand?w=' + encodeURIComponent(target) + '&from=study' });
       return;
     }
-    this.turnTo('next', advance);
+    this.turnTo('next', advance, this.turnSpeed());
   },
 
   again() {
@@ -103,7 +117,6 @@ Page(flip.mixin({
   goMatch() {
     wx.navigateTo({ url: '/pages/match/match' });
   },
-
   goSpell() {
     wx.switchTab({ url: '/pages/spell/spell' });
   },

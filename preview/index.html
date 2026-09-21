@@ -203,13 +203,16 @@ body.dark .side h1{color:#fff}
 .stage-art{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover}
 .stage-veil{position:absolute;left:0;top:0;right:0;bottom:0}
 .stage-mono{position:absolute;right:-10px;bottom:-50px;font-size:190px;font-weight:700;line-height:1;opacity:.12}
+/* 左上角「上一个单词」标记：小字、不抢主体 */
+.stage-prev{position:absolute;left:14px;top:12px;right:14px;font-size:10px;line-height:1.35;text-align:left;word-break:break-word}
 
-/* 翻书动画：换词时把「书页」从装订边翻过去，再翻下一页回来 */
+/* 翻书动画：换词时把「书页」从装订边翻过去，再翻下一页回来
+   --turn-out-ms / --turn-in-ms 由 turnTo() 的第三参数注入，默认 200ms / 400ms */
 .turn-wrap{position:relative}
-.turn-out-next{transform-origin:left center;animation:turnOutNext .2s ease-in both}
-.turn-in-next{transform-origin:left center;animation:turnInNext .4s cubic-bezier(.22,.68,.24,1) backwards}
-.turn-out-prev{transform-origin:right center;animation:turnOutPrev .2s ease-in both}
-.turn-in-prev{transform-origin:right center;animation:turnInPrev .4s cubic-bezier(.22,.68,.24,1) backwards}
+.turn-out-next{transform-origin:left center;animation:turnOutNext var(--turn-out-ms,.2s) ease-in both}
+.turn-in-next{transform-origin:left center;animation:turnInNext var(--turn-in-ms,.4s) cubic-bezier(.22,.68,.24,1) backwards}
+.turn-out-prev{transform-origin:right center;animation:turnOutPrev var(--turn-out-ms,.2s) ease-in both}
+.turn-in-prev{transform-origin:right center;animation:turnInPrev var(--turn-in-ms,.4s) cubic-bezier(.22,.68,.24,1) backwards}
 @keyframes turnOutNext{0%{transform:perspective(1600px) rotateY(0);opacity:1}60%{opacity:.5}100%{transform:perspective(1600px) rotateY(-78deg);opacity:.06}}
 @keyframes turnInNext{0%{transform:perspective(1600px) rotateY(26deg);opacity:.2}100%{transform:perspective(1600px) rotateY(0);opacity:1}}
 @keyframes turnOutPrev{0%{transform:perspective(1600px) rotateY(0);opacity:1}60%{opacity:.5}100%{transform:perspective(1600px) rotateY(78deg);opacity:.06}}
@@ -358,11 +361,16 @@ if (sysDark && sysDark.addEventListener) sysDark.addEventListener('change', () =
 
 /* ---------- 翻书动画：先把当前这页翻走，再换内容翻回来 ---------- */
 let turn = '';
+let turnCss = '';          /* 单次翻页的时长覆盖（--turn-out-ms / --turn-in-ms） */
 let turning = false;
-function turnTo(dir, fn) {
+const TURN_OUT = 200, TURN_IN = 400;
+function turnTo(dir, fn, speed) {
   if (turning) return;
   turning = true;
   const d = dir === 'prev' ? 'prev' : 'next';
+  const outMs = speed && speed.out ? speed.out : TURN_OUT;
+  const inMs = speed && speed.in ? speed.in : TURN_IN;
+  turnCss = '--turn-out-ms:' + outMs + 'ms;--turn-in-ms:' + inMs + 'ms';
   turn = 'turn-out-' + d;
   render();
   setTimeout(() => {
@@ -373,8 +381,8 @@ function turnTo(dir, fn) {
     render();
     /* 动画播完清掉翻页类：否则之后任何 render()（翻面、提示、切 tab……）
        都会带着 turn-in 类重播一遍翻入动画 */
-    setTimeout(() => { turning = false; turn = ''; }, 420);
-  }, 200);
+    setTimeout(() => { turning = false; turn = ''; turnCss = ''; }, inMs + 20);
+  }, outMs);
 }
 function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function day() { const k = today(); if (!S.days[k]) S.days[k] = { learn: 0, spell: 0, right: 0, wrong: 0 }; return S.days[k]; }
@@ -641,6 +649,34 @@ function hexRgb(hex) {
 function mixTo(rgb, t, a) { return rgb.map(c => Math.round(c + (t - c) * a)); }
 function rgbStr(r) { return 'rgb(' + r[0] + ',' + r[1] + ',' + r[2] + ')'; }
 function rgbaStr(r, a) { return 'rgba(' + r[0] + ',' + r[1] + ',' + r[2] + ',' + a + ')'; }
+/** 词形拓拓展合并成一行文本，如 "shallow-hearted 薄情的"；没有则返回 '' */
+function formsText(it, sep) {
+  if (!it || !it.dr || !it.dr.length) return '';
+  const s = sep === undefined ? ' ' : sep;
+  return it.dr.map(p => {
+    const w = String(p[0] || '').trim();
+    const cn = String(p[1] || '').trim();
+    if (w && cn) return w + s + cn;
+    return w || cn;
+  }).filter(Boolean).join(' / ');
+}
+/**
+ * 上一张卡片左上角的标记，如 "thermal /ˈθɜːməl/ adj. 热量的"。
+ * 只传下标（不传单词），越界或无效一律返回 '' —— 第一个单词天然是空的。
+ * opts.forms = true 时额外拼上词形拓展（拼写页用）。
+ */
+function prevTag(list, prevIdx, opts) {
+  const it = (list || [])[prevIdx];
+  if (!it || !it.w) return '';
+  let out = it.w;
+  if (it.ph) out += ' ' + it.ph;
+  if (it.cn) out += ' ' + it.cn;
+  if (opts && opts.forms) {
+    const f = formsText(it, ' ');
+    if (f) out += ' ' + f;
+  }
+  return out;
+}
 /* 词卡配色：深色下把章节色调暗做底、提亮标签文字（与 utils/word.js 的 card() 一致） */
 function cardStyle(ch) {
   const accent = hexRgb(CHAPTER_INK[ch] || '#3E4F60');
@@ -778,10 +814,11 @@ function vStudy() {
   const art = themeImg(w.ch);
   return '<div class="bar-head"><div class="bar"><i style="width:' + (study.idx / study.list.length * 100) + '%"></i></div>'
     + '<div class="bar-txt">' + (study.idx + 1) + ' / ' + study.list.length + '</div></div>'
-    + '<div class="turn-wrap ' + turn + '"><div class="stage">'
+    + '<div class="turn-wrap ' + turn + '" style="' + turnCss + '"><div class="stage">'
     + '<div class="stage-card" data-act="flip" style="position:relative;overflow:hidden">'
     + (art ? '<img class="stage-art" src="' + art + '" alt="" onerror="this.style.display=\'none\'">' : '')
     + '<div class="stage-veil" style="background:' + cs.veil + '"></div>'
+    + (prevTag(study.list, study.idx - 1) ? '<div class="stage-prev" style="color:' + cs.fg2 + '">' + esc(prevTag(study.list, study.idx - 1)) + '</div>' : '')
     + '<div class="flip-box' + (study.show ? ' flip-on' : '') + '">'
     + '<div class="flip-face">'
     + '<div class="stage-mono" style="color:' + cs.ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>'
@@ -822,11 +859,12 @@ function vSpell() {
   const art = themeImg(c.ch);
   return '<div class="bar-head"><div class="bar"><i style="width:' + (spell.idx / spell.list.length * 100) + '%"></i></div>'
     + '<div class="bar-txt">' + (spell.idx + 1) + ' / ' + spell.list.length + ' · 正确 ' + spell.right + '</div></div>'
-    + '<div class="turn-wrap ' + turn + '">'
+    + '<div class="turn-wrap ' + turn + '" style="' + turnCss + '">'
     + '<div class="spell-stage">'
     + (art ? '<img class="spell-art" src="' + art + '" alt="" onerror="this.style.display=\'none\'">' : '')
     + '<div class="spell-veil" style="background:' + cs.veil + '"></div>'
     + (spell.checked ? '' : '<div class="spell-mono" style="color:' + cs.ink + '">' + esc(String(c.w).charAt(0).toUpperCase()) + '</div>')
+    + (prevTag(spell.list, spell.idx - 1, { forms: true }) ? '<div class="stage-prev" style="color:' + cs.fg2 + '">' + esc(prevTag(spell.list, spell.idx - 1, { forms: true })) + '</div>' : '')
     + '<div class="quiz"><div class="quiz-cn" style="color:' + cs.fg + '">' + esc(c.cn) + '</div>'
     + '<div class="quiz-mask" style="color:' + cs.fg2 + '">' + esc(mask(c.w, spell.reveal || 0)) + '</div>'
     + (spell.checked && c.ph ? '<div class="quiz-ph" style="color:' + cs.ph + '">' + esc(c.ph) + '</div>' : '')
@@ -1195,11 +1233,13 @@ function act(a, el) {
   if (a === 'skip') { spell.checked = true; spell.ok = false; spell.wrong++; mark(spell.list[spell.idx].w, -2, false); day().spell++; save(); return render(); }
   if (a === 'submit') return submitSpell();
   if (a === 'nextq') {
+    /* 上一题答对 → 翻慢一点，让人看清左上角上一个单词的标记 */
+    const slow = spell.ok ? { out: 420, in: 700 } : null;
     return turnTo('next', () => {
       spell.idx++;
       spell.checked = false; spell.ok = false; spell.input = ''; spell.reveal = 0;
       if (spell.idx >= spell.list.length) spell.done = true;
-    });
+    }, slow);
   }
   if (a === 'privacy') return show('privacy', 'me');
   if (a === 'syncNow') return toast('预览里没有云环境，真机配置后可用');
@@ -1220,12 +1260,13 @@ function submitSpell() {
     spell.right++; mark(c.w, 1, true); day().right++; day().spell++; save();
     setTimeout(() => {
       if (!spell.checked) return;
+      /* 答对自动翻页：慢一些，让人看清左上角上一个单词的标记 */
       turnTo('next', () => {
         spell.idx++;
         spell.checked = false; spell.ok = false; spell.input = ''; spell.reveal = 0;
         if (spell.idx >= spell.list.length) spell.done = true;
-      });
-    }, 700);
+      }, { out: 420, in: 700 });
+    }, 600);
   } else { spell.wrong++; mark(c.w, -2, false); day().spell++; save(); render(); }
 }
 function startSpell() {

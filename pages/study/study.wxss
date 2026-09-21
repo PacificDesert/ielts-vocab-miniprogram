@@ -24,6 +24,17 @@
   position: absolute;
   left: 0; top: 0; right: 0; bottom: 0;
 }
+/* 左上角「上一个单词」标记：小字、不抢主体 */
+.stage-prev {
+  position: absolute;
+  left: 28rpx;
+  top: 24rpx;
+  right: 28rpx;
+  font-size: 20rpx;
+  line-height: 1.35;
+  text-align: left;
+  word-break: break-word;
+}
 .stage-mono {
   position: absolute;
   right: -20rpx;
