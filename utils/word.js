@@ -136,7 +136,9 @@ function card(ch, w, dark) {
     fg: dark ? '#FFFFFF' : '#1C1C1E',
     fg2: dark ? 'rgba(255, 255, 255, 0.80)' : 'rgba(60, 60, 67, 0.62)',
     // 音标：直接用章节强调色，深浅两套都够亮、也不依赖主题变量
-    ph: rgbStr(ink)
+    ph: rgbStr(ink),
+    // 选项卡描边：卡面同色系的浅描边，深浅两套都看得见
+    line: dark ? rgbaStr(ink.map(c => Math.round(c * 0.5)), 0.45) : rgbaStr(tint, 0.9)
   };
 }
 
@@ -180,6 +182,135 @@ function prevTag(list, prevIdx, opts) {
   return out;
 }
 
+/** 词性标注：词库里 2000+ 条释义自带 "n. / adj. / v." 前缀 */
+const POS_LEAD = /^(n|adj|adv|v|vt|vi|prep|conj|pron|num|int|art|aux|abbr)\.\s/;
+
+/**
+ * 常见词 → 词性。只覆盖已经确认过的高频词，宁缺毋滥：
+ * 猜错词性比不写词性更糟，所以表里的取不到就原样返回。
+ */
+const POS_MAP = {
+  oxygen: 'n.', hydrogen: 'n.', oxide: 'n.', nitrogen: 'n.', dioxide: 'n.',
+  spider: 'n.', elephant: 'n.', cattle: 'n.', eagle: 'n.', needle: 'n.',
+  bowl: 'n.', soup: 'n.', circle: 'n.', enzyme: 'n.', carbon: 'n.',
+  dispute: 'n./v.', friction: 'n.', property: 'n.', problem: 'n.',
+  endanger: 'v.', disagree: 'v.', declare: 'v.', debate: 'n./v.'
+};
+
+/** 编辑距离，超过 max 就提前收手（用于找拼写相近的词） */
+function editDistance(a, b, max) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const m = a.length;
+  const n = b.length;
+  let prev = new Array(n + 1);
+  let cur = new Array(n + 1);
+  for (let j = 0; j <= n; j += 1) prev[j] = j;
+  for (let i = 1; i <= m; i += 1) {
+    cur[0] = i;
+    let best = cur[0];
+    for (let j = 1; j <= n; j += 1) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (cur[j] < best) best = cur[j];
+    }
+    if (best > max) return max + 1;
+    const t = prev; prev = cur; cur = t;
+  }
+  return prev[n];
+}
+
+/** 去掉释义开头的杂标点（OCR 常把「（」吃掉，留下孤零零的「，」「、」）并压掉空白 */
+function tidyCn(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/^[，,、；;：:]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * 释义正文：题干（正确项）永远带上词性标注。
+ * 词库里有 2000+ 条释义自带 "n. / adj. / v." 前缀，剩下的大多没有 ——
+ * 若不补齐，测验里会出现「只有正确项没写词性」的反常现象，一眼就能猜出答案。
+ * 补不出词性时退回原释义，绝不硬编。
+ */
+function cnText(cn) {
+  const s = tidyCn(cn);
+  if (!s) return '';
+  if (POS_LEAD.test(s)) return s;
+  const pos = POS_MAP[String(s.split(/[；;/]/)[0]).trim()];
+  return pos ? pos + ' ' + s : s;
+}
+
+/** 两个词是否高度重形（同前缀 / 包含关系）——这类干扰项太容易排除，不算「形近」 */
+function tooClose(a, b) {
+  if (a === b) return true;
+  if (a.length >= 3 && b.indexOf(a) === 0) return true;
+  if (b.length >= 3 && a.indexOf(b) === 0) return true;
+  return false;
+}
+
+/**
+ * 记忆卡的「选释义」四个选项：正确释义 + 3 个形近词的释义。
+ * 干扰项优先取拼写相近的词（让选项真正难分辨），出处书的 sim 列表、
+ * 编辑距离邻域、同章节顺延三级兜底；释义去重且保证凑满 count 个。
+ * 返回 [{ cn, ok }]，ok 标记正确项，且数组第一项一定是正确项（由调用方打乱）。
+ */
+function options(it, n) {
+  const count = n && n > 1 ? n : 4;
+  if (!it || !it.cn) return [];
+  const list = words.list;
+  const target = String(it.w || '').toLowerCase();
+  const answer = cnText(it.cn);
+  // 正确释义先占位：像 spacecraft / spaceship 这类同义项释义完全一样，
+  // 必须当成重复直接剔除，否则选项里会出现两个「n. 宇宙飞船」。
+  const picked = [];
+  const seen = {};
+  seen[answer] = 1;
+  const push = cand => {
+    if (picked.length >= count) return;
+    if (!cand || !cand.cn || cand === it) return;
+    if (tooClose(target, String(cand.w || '').toLowerCase())) return;
+    const cn = tidyCn(cand.cn);
+    if (!cn || seen[cn]) return;
+    seen[cn] = 1;
+    picked.push(cn);
+  };
+
+  // 1) 编辑距离邻域：与目标词最像的一批（拼写 1~2 个字母之差）
+  const near = [];
+  for (let k = 0; k < list.length; k += 1) {
+    const cand = list[k];
+    if (!cand || !cand.w || cand === it) continue;
+    const cw = String(cand.w).toLowerCase();
+    const d = editDistance(target, cw, 3);
+    if (d <= 2) near.push([d, cand]);
+  }
+  near.sort((a, b) => a[0] - b[0]);
+  for (let k = 0; k < near.length && picked.length < count; k += 1) push(near[k][1]);
+
+  // 2) 出处书里的相近词
+  const sims = it.sim || [];
+  for (let k = 0; k < sims.length && picked.length < count; k += 1) push(list[sims[k]]);
+
+  // 3) 同章节顺延，语境相近，凑数也不突兀
+  const chapter = chapterWords(it.ch);
+  const at = chapter.indexOf(it);
+  for (let k = 1; k <= chapter.length && picked.length < count; k += 1) {
+    push(chapter[(at + k) % chapter.length]);
+  }
+
+  // 4) 全表轮转兜底：前面几级都被同义词屏蔽掉时，保证任何词都能凑满选项
+  for (let pass = 0; pass < 2 && picked.length < count - 1; pass += 1) {
+    for (let k = 0; k < list.length && picked.length < count - 1; k += 1) {
+      push(list[(start + k) % list.length]);
+    }
+  }
+
+  return [Object.assign({}, { cn: answer, ok: true })]
+    .concat(picked.slice(0, count - 1).map(cn => ({ cn, ok: false })));
+}
+
 /** 书中例句 */
 function example(it) {
   if (!it || !it.ex || !it.ex.length) return null;
@@ -188,6 +319,6 @@ function example(it) {
 
 module.exports = {
   all, get, chapterList, chapterWords, search, slice,
-  themeImage, card, similar, forms, prevTag, example,
+  themeImage, card, similar, forms, prevTag, options, example,
   total: words.list.length
 };

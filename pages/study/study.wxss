@@ -75,7 +75,70 @@
   text-align: center;
   word-break: break-word;
 }
+/* 正面主单词：加黑（比背面释义更重） */
+.flip-face .stage-word { font-weight: 700; }
 .stage-ph { font-size: 30rpx; color: var(--text2); margin-top: 16rpx; }
+
+/* 例句：比单词更淡更小，可发音 */
+.stage-ex-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 20rpx;
+  padding: 0 16rpx;
+  max-width: 100%;
+}
+.stage-ex-t {
+  font-size: 22rpx;
+  line-height: 1.55;
+  opacity: 0.72;
+  text-align: center;
+  word-break: break-word;
+}
+.ex-speak {
+  flex: none;
+  font-size: 20rpx;
+  line-height: 1;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid currentColor;
+  opacity: 0.75;
+}
+
+/* 四个释义选项卡 */
+.opts {
+  width: 100%;
+  margin-top: 44rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.opt {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 22rpx 24rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid;
+  font-size: 28rpx;
+  line-height: 1.45;
+  text-align: center;
+  word-break: break-word;
+  transition: background-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+}
+.opt-hover { transform: scale(0.985); opacity: 0.85; }
+.opt.ok {
+  border-color: #34C759 !important;
+  background: rgba(52, 199, 89, 0.18);
+  color: #1B7A36 !important;
+  font-weight: 600;
+}
+.opt.bad {
+  border-color: #FF3B30 !important;
+  background: rgba(255, 59, 48, 0.16);
+  color: #B3231B !important;
+  opacity: 0.95;
+}
 .stage-line { width: 80rpx; height: 2rpx; background: var(--line); margin: 48rpx 0 32rpx; }
 .stage-cn { font-size: 34rpx; line-height: 1.6; text-align: center; }
 .stage-ex {
@@ -88,9 +151,19 @@
 }
 .stage-ch { font-size: 24rpx; color: var(--text3); margin-top: 24rpx; }
 .stage-hint { font-size: 26rpx; color: var(--text3); margin-top: 60rpx; }
+/* 翻面时正面选项不要露出（iOS 下 backface 偶发穿透） */
+.flip-box.flip-on .flip-face { pointer-events: none; }
+.flip-box.flip-on .flip-back { pointer-events: auto; }
 
 .actions { display: flex; gap: 20rpx; padding: 40rpx 24rpx 0; }
 .actions .btn { flex: 1; }
+/* 还没选出正确释义时，底部不给记熟练度的按钮，避免跳过测验 */
+.actions-hint {
+  padding: 46rpx 24rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--text3);
+}
 .gap { margin-top: 20rpx; }
 
 .finish { padding: 120rpx 40rpx 0; text-align: center; }

@@ -1,6 +1,19 @@
 const store = require('../../utils/store');
 const word = require('../../utils/word');
+const config = require('../../config');
 const flip = require('../../utils/flip');
+
+/** 打乱数组（洗牌），返回新数组；用来让四个选项卡的正确答案不总在第一个 */
+function shuffle(arr) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = out[i];
+    out[i] = out[j];
+    out[j] = t;
+  }
+  return out;
+}
 
 Page(flip.mixin({
   data: {
@@ -13,6 +26,8 @@ Page(flip.mixin({
     cur: {},
     card: {},
     prevTag: '',
+    opts: [],
+    picked: false,
     turnSpeed: null
   },
 
@@ -20,23 +35,43 @@ Page(flip.mixin({
     // 从拓展页「下一个单词」进来时带 ?i=<词库下标>，直接以该词为起点开一组记忆卡
     const idx = q && q.i !== undefined && q.i !== '' ? Number(q.i) : NaN;
     this.start = isNaN(idx) ? -1 : idx;
+    // 例句发音：与拓展页同一套（config.AUDIO_API 未配置时隐藏按钮）
+    this.audio = config.AUDIO_API ? wx.createInnerAudioContext() : null;
+    if (this.audio) this.audio.onError(() => wx.showToast({ title: '发音加载失败', icon: 'none' }));
     const list = this.pickBatch();
     // 记下这一组，背完后可以直接拿来做「意思匹配」
     getApp().globalData.lastBatch = list;
     this.setData(Object.assign({ list, done: !list.length }, getApp().themeData()), () => this.sync());
   },
 
-  /** start >= 0 说明是拓展页跳转进来的，按起点取词；否则走正常的学习游标 */
-  pickBatch() {
-    return this.start >= 0 ? store.batchFrom(this.start) : store.nextLearnBatch();
+  onUnload() {
+    this.stopTurn();
+    if (this._pickTimer) {
+      clearTimeout(this._pickTimer);
+      this._pickTimer = null;
+    }
+    if (this.audio) {
+      this.audio.destroy();
+      this.audio = null;
+    }
   },
 
   onShow() {
     this.setData(getApp().themeData());
   },
 
-  onUnload() {
-    this.stopTurn();
+  /** 朗读当前单词的例句（用例句文本喂给同一个发音接口） */
+  onSpeakEx() {
+    const ex = this.data.cur && this.data.cur.ex;
+    if (!this.audio || !ex || !ex[0]) return;
+    this.audio.stop();
+    this.audio.src = config.AUDIO_API + encodeURIComponent(ex[0]);
+    this.audio.play();
+  },
+
+  /** start >= 0 说明是拓展页跳转进来的，按起点取词；否则走正常的学习游标 */
+  pickBatch() {
+    return this.start >= 0 ? store.batchFrom(this.start) : store.nextLearnBatch();
   },
 
   syncTheme() {
@@ -50,6 +85,8 @@ Page(flip.mixin({
     const cur = list[idx] || {};
     this.setData({
       cur,
+      // 正面「选释义」的四个选项卡：正确释义 + 3 个形近词释义，每张卡重新打乱顺序
+      opts: cur.w ? shuffle(word.options(cur, 4).map(o => ({ cn: o.cn, ok: o.ok, st: '' }))) : [],
       // 左上角标记上一个单词的拼写 / 音标 / 中文释义；第一个单词为空（不显示）
       prevTag: word.prevTag(list, idx - 1),
       show: false,
@@ -57,8 +94,26 @@ Page(flip.mixin({
     });
   },
 
-  flip() {
-    this.setData({ show: !this.data.show });
+  /**
+   * 点选释义选项卡。
+   * 选对 → 立刻标绿，0.4s 后翻到卡片背面（看释义 / 例句 / 章节），
+   *   再由底部的「不认识 / 认识」记熟练度并进入下一个单词；
+   * 选错 → 整块变红抖一下并锁定，用户可以继续试其他选项。
+   */
+  onPick(e) {
+    const i = Number(e.currentTarget.dataset.i);
+    const opts = this.data.opts;
+    if (!opts || !opts[i]) return;
+    if (opts[i].st === 'bad') return;      // 选错的已锁死
+    if (this.data.picked) return;          // 已经选对，等翻面 / 进入下一个
+
+    const next = opts.map((o, k) => (k === i ? Object.assign({}, o, { st: o.ok ? 'ok' : 'bad' }) : o));
+    if (!opts[i].ok) {
+      this.setData({ opts: next });
+      return;
+    }
+    this.setData({ opts: next, picked: true });
+    this._pickTimer = setTimeout(() => this.setData({ show: true }), 400);
   },
 
   /**

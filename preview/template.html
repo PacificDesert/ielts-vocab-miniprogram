@@ -153,7 +153,25 @@ body.dark .side h1{color:#fff}
 .stage-cn{font-size:18px;line-height:1.55}
 .stage-ch{font-size:12px;color:var(--text2);margin-top:14px}
 .stage-hint{font-size:13px;color:var(--text3);margin-top:26px}
+/* 正面主单词加黑：比背面释义更重一档 */
+.flip-face .stage-word{font-weight:800}
+/* 例句：比单词更淡更小，可点发音 */
+.stage-ex-line{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:0 8px;max-width:100%}
+.stage-ex-t{font-size:11px;line-height:1.55;opacity:.72;text-align:center;word-break:break-word}
+.ex-speak{flex:none;font-size:10px;line-height:1;padding:4px 8px;border-radius:99px;border:1px solid currentColor;opacity:.75;cursor:pointer}
+/* 四个释义选项卡 */
+.opts{width:100%;margin-top:22px;display:flex;flex-direction:column;gap:8px}
+.opt{
+  width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid;
+  font-size:14px;line-height:1.45;text-align:center;word-break:break-word;cursor:pointer;
+  transition:background-color .18s ease,transform .18s ease,opacity .18s ease;
+  background:transparent;
+}
+.opt:hover{transform:scale(.985);opacity:.85}
+.opt.ok,.opt.ok:hover{border-color:#34C759 !important;background:rgba(52,199,89,.18);color:#1B7A36 !important;font-weight:600;opacity:1}
+.opt.bad,.opt.bad:hover{border-color:#FF3B30 !important;background:rgba(255,59,48,.16);color:#B3231B !important;opacity:.95}
 .actions{display:flex;gap:12px;padding:18px 18px 0}
+.actions-hint{padding:23px 18px 0;text-align:center;font-size:12px;color:var(--text3)}
 /* 拼写页题目卡：与记忆卡同款（章节配图 + 渐变遮罩 + 首字母水印） */
 .spell-stage{position:relative;margin:0 10px;background:var(--card);border-radius:16px;overflow:hidden;min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .spell-art{position:absolute;left:0;top:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover}
@@ -371,13 +389,16 @@ function turnTo(dir, fn, speed) {
   const outMs = speed && speed.out ? speed.out : TURN_OUT;
   const inMs = speed && speed.in ? speed.in : TURN_IN;
   turnCss = '--turn-out-ms:' + outMs + 'ms;--turn-in-ms:' + inMs + 'ms';
+  /* 先把内容切到下一个词、再上「翻出」类渲染：
+     若顺序反过来（先 render 再 fn），vStudy 会在 idx 还是旧值时就给旧词生成选项卡，
+     并把 optsWord 记成旧词 —— 翻回来时因为 optsWord 已经「匹配」便不再重建，
+     结果新词的选项卡是上一个词的。 */
+  fn();
   turn = 'turn-out-' + d;
   render();
   setTimeout(() => {
-    /* 先切成「翻入」类再执行 fn：fn 内部若触发渲染（如「认识」切拓展页），
-       新内容就直接以翻入动画出现，不会先误播一遍翻出 */
     turn = 'turn-in-' + d;
-    fn();
+    /* fn 内部若已自行渲染（如「认识」切拓展页），新内容就直接以翻入动画出现 */
     render();
     /* 动画播完清掉翻页类：否则之后任何 render()（翻面、提示、切 tab……）
        都会带着 turn-in 类重播一遍翻入动画 */
@@ -544,6 +565,23 @@ function render() {
   s.scrollTop = 0;
 }
 
+/**
+ * 只换底部动作区（记忆卡选对释义后把「不认识 / 认识」放出来）。
+ * 不能走 render()：那会全量重建 innerHTML，正在播的翻面 transition 会被打断。
+ */
+function renderActions() {
+  if (cur.screen !== 'study' || !study || !study.picked) return;
+  const s = $('screen');
+  const hint = s && s.querySelector ? s.querySelector('.actions-hint') : null;
+  if (!hint) return;
+  const box = document.createElement('div');
+  box.className = 'actions';
+  box.innerHTML = '<button class="btn btn-plain" data-act="unknown">不认识</button>'
+    + '<button class="btn btn-primary" data-act="known">认识</button>';
+  hint.parentNode.replaceChild(box, hint);
+  box.querySelectorAll('[data-act]').forEach(el => { el.onclick = () => act(el.dataset.act, el); });
+}
+
 function vLearn() {
   const st = stats(), d = S.days[today()] || { learn: 0, spell: 0 };
   return '<div class="h1">雅思词汇</div>'
@@ -677,6 +715,96 @@ function prevTag(list, prevIdx, opts) {
   }
   return out;
 }
+/* ——— 「选释义」选项生成（与 utils/word.js 的 options() 保持一致） ——— */
+const POS_LEAD = /^(n|adj|adv|v|vt|vi|prep|conj|pron|num|int|art|aux|abbr)\.\s/;
+/* 常见词的词性；猜不到就原样返回，绝不硬编 */
+const POS_MAP = {
+  oxygen: 'n.', hydrogen: 'n.', oxide: 'n.', nitrogen: 'n.', dioxide: 'n.',
+  spider: 'n.', elephant: 'n.', cattle: 'n.', eagle: 'n.', needle: 'n.',
+  bowl: 'n.', soup: 'n.', circle: 'n.', enzyme: 'n.', carbon: 'n.',
+  dispute: 'n./v.', friction: 'n.', property: 'n.', problem: 'n.',
+  endanger: 'v.', disagree: 'v.', declare: 'v.', debate: 'n./v.'
+};
+/* 去掉释义开头的杂标点并压空白 */
+function tidyCn(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/^[，,、；;：:]+/, '').replace(/\s+/g, ' ').trim();
+}
+/* 释义正文：题干永远带词性标注，否则会出现「只有正确项没写词性」的破绽 */
+function cnText(cn) {
+  const s = tidyCn(cn);
+  if (!s) return '';
+  if (POS_LEAD.test(s)) return s;
+  const pos = POS_MAP[String(s.split(/[；;/]/)[0]).trim()];
+  return pos ? pos + ' ' + s : s;
+}
+/* 同前缀 / 包含关系不算「形近」，太容易排除 */
+function tooClose(a, b) {
+  if (a === b) return true;
+  if (a.length >= 3 && b.indexOf(a) === 0) return true;
+  if (b.length >= 3 && a.indexOf(b) === 0) return true;
+  return false;
+}
+function editDistance(a, b, max) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const m = a.length, n = b.length;
+  let prev = [], cur = [];
+  for (let j = 0; j <= n; j += 1) prev[j] = j;
+  for (let i = 1; i <= m; i += 1) {
+    cur[0] = i;
+    let best = i;
+    for (let j = 1; j <= n; j += 1) {
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (cur[j] < best) best = cur[j];
+    }
+    if (best > max) return max + 1;
+    const t = prev; prev = cur; cur = t;
+  }
+  return prev[n];
+}
+/**
+ * 正确释义 + 3 个形近词释义。干扰项优先取拼写最像的（编辑距离 ≤2），
+ * 再去书的相近词、同章节顺延、全表轮转兜底；释义去重，必定凑满 count 个。
+ * 返回的数组第 0 项是正确项（由调用方打乱）。
+ */
+function optionsFor(it, n) {
+  const count = n && n > 1 ? n : 4;
+  if (!it || !it.cn) return [];
+  const target = String(it.w || '').toLowerCase();
+  const answer = cnText(it.cn);
+  const picked = [], seen = {};
+  seen[answer] = 1;   /* 同义词（spacecraft / spaceship）释义一样，必须当重复剔掉 */
+  const push = cand => {
+    if (picked.length >= count) return;
+    if (!cand || !cand.cn || cand === it) return;
+    if (tooClose(target, String(cand.w || '').toLowerCase())) return;
+    const cn = tidyCn(cand.cn);
+    if (!cn || seen[cn]) return;
+    seen[cn] = 1; picked.push(cn);
+  };
+  const near = [];
+  for (let k = 0; k < WORDS.length; k += 1) {
+    const cand = WORDS[k];
+    if (!cand || !cand.w || cand === it) continue;
+    const d = editDistance(target, String(cand.w).toLowerCase(), 3);
+    if (d <= 2) near.push([d, cand]);
+  }
+  near.sort((a, b) => a[0] - b[0]);
+  for (let k = 0; k < near.length && picked.length < count; k += 1) push(near[k][1]);
+  const sims = it.sim || [];
+  for (let k = 0; k < sims.length && picked.length < count; k += 1) push(WORDS[sims[k]]);
+  const chap = WORDS.filter(x => x.ch === it.ch);
+  const at = chap.indexOf(it);
+  for (let k = 1; k <= chap.length && picked.length < count; k += 1) push(chap[(at + k) % chap.length]);
+  const start = it.i === undefined ? 0 : it.i + 1;
+  for (let pass = 0; pass < 2 && picked.length < count - 1; pass += 1) {
+    for (let k = 0; k < WORDS.length && picked.length < count - 1; k += 1) push(WORDS[(start + k) % WORDS.length]);
+  }
+  return [{ cn: answer, ok: true }].concat(picked.slice(0, count - 1).map(cn => ({ cn, ok: false })));
+}
+
 /* 词卡配色：深色下把章节色调暗做底、提亮标签文字（与 utils/word.js 的 card() 一致） */
 function cardStyle(ch) {
   const accent = hexRgb(CHAPTER_INK[ch] || '#3E4F60');
@@ -702,7 +830,11 @@ function cardStyle(ch) {
        所以按主题给高对比的正文 / 次级色；音标用章节强调色 */
     fg: dark ? '#FFFFFF' : '#1C1C1E',
     fg2: dark ? 'rgba(255, 255, 255, 0.80)' : 'rgba(60, 60, 67, 0.62)',
-    ph: rgbStr(ink)
+    ph: rgbStr(ink),
+    /* 选项卡描边：卡面同色系的浅描边，深浅两套都看得见（与 word.js 的 card().line 一致） */
+    line: dark
+      ? rgbaStr(ink.map(c => Math.round(c * 0.5)), 0.45)
+      : rgbaStr(tint, 0.9)
   };
 }
 function cardHtml(w) {
@@ -812,19 +944,36 @@ function vStudy() {
   const w = study.list[study.idx];
   const cs = cardStyle(w.ch);
   const art = themeImg(w.ch);
+  if (!study.opts || study.optsWord !== w.w) {
+    study.optsWord = w.w;
+    study.opts = shuffleArr(optionsFor(w, 4).map(o => ({ cn: o.cn, ok: o.ok, st: '' })));
+    study.picked = false;
+  }
+  const opts = study.opts;
+  const pv = prevTag(study.list, study.idx - 1);
   return '<div class="bar-head"><div class="bar"><i style="width:' + (study.idx / study.list.length * 100) + '%"></i></div>'
     + '<div class="bar-txt">' + (study.idx + 1) + ' / ' + study.list.length + '</div></div>'
     + '<div class="turn-wrap ' + turn + '" style="' + turnCss + '"><div class="stage">'
-    + '<div class="stage-card" data-act="flip" style="position:relative;overflow:hidden">'
+    + '<div class="stage-card" style="position:relative;overflow:hidden">'
     + (art ? '<img class="stage-art" src="' + art + '" alt="" onerror="this.style.display=\'none\'">' : '')
     + '<div class="stage-veil" style="background:' + cs.veil + '"></div>'
-    + (prevTag(study.list, study.idx - 1) ? '<div class="stage-prev" style="color:' + cs.fg2 + '">' + esc(prevTag(study.list, study.idx - 1)) + '</div>' : '')
+    + (pv ? '<div class="stage-prev" style="color:' + cs.fg2 + '">' + esc(pv) + '</div>' : '')
     + '<div class="flip-box' + (study.show ? ' flip-on' : '') + '">'
+    /* 正面：加黑的大单词 + 更淡更小的例句（可发音） + 四个释义选项卡 */
     + '<div class="flip-face">'
     + '<div class="stage-mono" style="color:' + cs.ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>'
     + '<div class="stage-word" style="color:' + cs.fg + '">' + esc(w.w) + '</div>'
     + (w.ph ? '<div class="stage-ph" style="color:' + cs.ph + '">' + esc(w.ph) + '</div>' : '')
-    + '<div class="stage-hint" style="color:' + cs.fg2 + '">轻触卡片查看释义</div>'
+    + (w.ex && w.ex[0]
+        ? '<div class="stage-ex-line" style="color:' + cs.fg2 + '">'
+          + '<span class="stage-ex-t">' + esc(w.ex[0]) + '</span>'
+          + '<span class="ex-speak" data-act="speakex">发音</span></div>'
+        : '')
+    + '<div class="opts">'
+    + opts.map((o, i) => '<div class="opt ' + o.st + '" data-act="pick" data-i="' + i + '"'
+        + ' style="border-color:' + cs.line + ';color:' + cs.fg + (o.st === 'ok' ? ';border-color:#34C759' : (o.st === 'bad' ? ';border-color:#FF3B30' : '')) + '">'
+        + esc(o.cn) + '</div>').join('')
+    + '</div>'
     + '</div>'
     + '<div class="flip-face flip-back">'
     + '<div class="stage-word" style="color:' + cs.fg + '">' + esc(w.w) + '</div>'
@@ -834,10 +983,11 @@ function vStudy() {
     + '<div class="stage-ch" style="color:' + cs.fg2 + '">' + esc(w.ch) + '</div>'
     + '</div></div>'
     + '</div></div></div>'
-    + '<div class="actions">'
-    + '<button class="btn btn-plain" data-act="unknown">不认识</button>'
-    + '<button class="btn btn-primary" data-act="known">认识</button>'
-    + '</div>';
+    + (study.picked
+        ? '<div class="actions">'
+          + '<button class="btn btn-plain" data-act="unknown">不认识</button>'
+          + '<button class="btn btn-primary" data-act="known">认识</button></div>'
+        : '<div class="actions-hint">先选出正确的中文释义</div>');
 }
 
 function vSpell() {
@@ -1107,7 +1257,7 @@ function act(a, el) {
   const w = cur.word;
   if (a === 'learn') {
     cur.startIdx = -1;
-    study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false };
+    study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false, opts: [], optsWord: '', picked: false };
     if (!study.list.length) { toast('没有可学的单词'); return; }
     cur.lastBatch = study.list;
     return show('study', 'learn');
@@ -1115,7 +1265,7 @@ function act(a, el) {
   if (a === 'again') {
     if (cur.screen === 'study') {
       const i = cur.startIdx;
-      study = { list: (i >= 0 ? nextLearnFrom(i) : nextLearn(S.plan)), idx: 0, show: false, right: 0, wrong: 0, done: false };
+      study = { list: (i >= 0 ? nextLearnFrom(i) : nextLearn(S.plan)), idx: 0, show: false, right: 0, wrong: 0, done: false, opts: [], optsWord: '', picked: false };
       cur.lastBatch = study.list;
       return render();
     }
@@ -1125,7 +1275,7 @@ function act(a, el) {
   if (a === 'tospell' || a === 'tolearn') {
     if (a === 'tospell') return go('spell');
     cur.startIdx = -1;
-    study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false };
+    study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false, opts: [], optsWord: '', picked: false };
     cur.lastBatch = study.list;
     return show('study', 'learn');
   }
@@ -1147,6 +1297,36 @@ function act(a, el) {
     if (side === 'l') match.pickL = match.pickL === i ? -1 : i;
     else match.pickR = match.pickR === i ? -1 : i;
     return judgeMatch();
+  }
+  if (a === 'pick') {
+    if (!study || study.picked) return;
+    const i = Number(el.dataset.i);
+    const o = study.opts && study.opts[i];
+    if (!o || o.st === 'bad') return;
+    /* 就地改 class：正确项标绿、错误项标红，都不能走 render()
+       （innerHTML 全量重建会让 CSS transition 直接失效） */
+    const scr = $('screen');
+    const el2 = scr && scr.querySelector ? scr.querySelector('.opt[data-i="' + i + '"]') : null;
+    if (!o.ok) {
+      o.st = 'bad';
+      if (el2) { el2.classList.remove('ok'); el2.classList.add('bad'); el2.style.borderColor = '#FF3B30'; }
+      return;
+    }
+    o.st = 'ok';
+    study.picked = true;
+    if (el2) { el2.classList.remove('bad'); el2.classList.add('ok'); el2.style.borderColor = '#34C759'; }
+    /* 选对后 0.4s 翻到背面看释义 / 例句 / 章节，再按底部按钮记熟练度 */
+    setTimeout(() => {
+      study.show = true;
+      const box = $('screen') && $('screen').querySelector ? $('screen').querySelector('.flip-box') : null;
+      if (box) box.classList.add('flip-on'); else render();
+      renderActions();
+    }, 400);
+    return;
+  }
+  if (a === 'speakex') {
+    if (study && study.list[study.idx] && study.list[study.idx].ex) speak(study.list[study.idx].ex[0]);
+    return;
   }
   if (a === 'flip') {
     study.show = !study.show;
@@ -1171,6 +1351,10 @@ function act(a, el) {
         if (known) study.right++; else study.wrong++;
         study.idx++;
         study.show = false;
+        /* 换词必须清掉上一题的选项卡与选择状态，否则下一张卡会沿用旧选项 */
+        study.opts = [];
+        study.optsWord = '';
+        study.picked = false;
         if (study.idx >= study.list.length) study.done = true;
         save();
       };
@@ -1213,7 +1397,7 @@ function act(a, el) {
     const next = WORDS[w.i + 1];
     if (!next) return toast('已经是最后一个单词');
     cur.startIdx = next.i;
-    study = { list: nextLearnFrom(next.i), idx: 0, show: false, right: 0, wrong: 0, done: false };
+    study = { list: nextLearnFrom(next.i), idx: 0, show: false, right: 0, wrong: 0, done: false, opts: [], optsWord: '', picked: false };
     return show('study', 'learn');
   }
   /* 详情页翻页 */

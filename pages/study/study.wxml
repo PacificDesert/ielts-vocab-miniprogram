@@ -9,7 +9,7 @@
     </view>
 
     <view class="turn-wrap {{turn}}" style="{{turnCss}}">
-      <view class="stage" bindtap="flip">
+      <view class="stage">
         <view class="stage-card">
           <image class="stage-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" />
           <view class="stage-veil" style="background:{{card.veil}}"></view>
@@ -17,13 +17,29 @@
           <!-- 左上角：上一个单词的拼写 / 音标 / 中文释义（第一个单词不显示） -->
           <view class="stage-prev" style="color:{{card.fg2}}" wx:if="{{prevTag}}">{{prevTag}}</view>
 
-          <!-- 轻触卡片：正面翻到背面，像翻一张单词卡 -->
+          <!-- 正面：加黑的大单词 + 例句（可发音） + 四个释义选项卡；选对后翻到背面 -->
           <view class="flip-box {{show ? 'flip-on' : ''}}">
             <view class="flip-face">
               <view class="stage-mono" style="color:{{card.ink}}">{{card.mono}}</view>
               <view class="stage-word" style="color:{{card.fg}}">{{cur.w}}</view>
               <view class="stage-ph" style="color:{{card.ph}}" wx:if="{{cur.ph}}">{{cur.ph}}</view>
-              <view class="stage-hint" style="color:{{card.fg2}}">轻触卡片查看释义</view>
+
+              <view class="stage-ex-line" style="color:{{card.fg2}}" wx:if="{{cur.ex}}">
+                <text class="stage-ex-t">{{cur.ex[0]}}</text>
+                <view class="ex-speak" catchtap="onSpeakEx">发音</view>
+              </view>
+
+              <view class="opts">
+                <view
+                  wx:for="{{opts}}"
+                  wx:key="cn"
+                  class="opt {{item.st}}"
+                  style="border-color:{{card.line}};color:{{card.fg}}"
+                  hover-class="opt-hover"
+                  data-i="{{index}}"
+                  catchtap="onPick"
+                >{{item.cn}}</view>
+              </view>
             </view>
             <view class="flip-face flip-back">
               <view class="stage-word" style="color:{{card.fg}}">{{cur.w}}</view>
@@ -37,10 +53,11 @@
       </view>
     </view>
 
-    <view class="actions">
+    <view class="actions" wx:if="{{picked}}">
       <view class="btn btn-plain btn-block" hover-class="btn-hover" bindtap="onUnknown">不认识</view>
       <view class="btn btn-primary btn-block" hover-class="btn-hover" bindtap="onKnow">认识</view>
     </view>
+    <view class="actions-hint" wx:else>先选出正确的中文释义</view>
   </block>
 
   <block wx:else>
