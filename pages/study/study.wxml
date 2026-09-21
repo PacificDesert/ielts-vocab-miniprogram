@@ -22,8 +22,12 @@
             <view class="flip-face">
               <view class="stage-mono" style="color:{{card.ink}}">{{card.mono}}</view>
 
-              <view class="stage-ex-line" style="color:{{card.fg}}" wx:if="{{cur.ex}}">
-                <text class="stage-ex-t">{{curEx}}</text>
+              <view class="stage-ex-line" style="color:{{card.fg}}" wx:if="{{exParts.length}}">
+                <text class="stage-ex-t"><text
+                  wx:for="{{exParts}}"
+                  wx:key="index"
+                  class="{{item.b ? 'ex-strong' : ''}}"
+                >{{item.t}}</text></text>
                 <view
                   class="ex-speak {{speaking ? 'on' : ''}}"
                   wx:if="{{canSpeak}}"

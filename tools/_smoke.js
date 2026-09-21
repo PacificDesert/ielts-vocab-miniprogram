@@ -61,6 +61,53 @@ const themeBlock = html.match(/<script id="theme"[^>]*>([\s\S]*?)<\/script>/);
 wordsEl.textContent = dataBlock ? dataBlock[1] : '{"chapters":[],"list":[]}';
 themeEl.textContent = themeBlock ? themeBlock[1] : '{}';
 
+/**
+ * 造一份全新的脚本作用域（含 DOM 桩）。
+ * 需要「干净状态」的用例（例如验证选项残留清理）在它上面跑，
+ * 免得被前面用例改过的 study / S 状态干扰。
+ */
+function makeSandbox() {
+  const screen = makeEl('div');
+  const byId = {
+    screen, nav: makeEl('div'), navTitle: makeEl('div'), tabs: makeEl('div'),
+    tabbar: makeEl('div'), words: wordsEl, theme: themeEl,
+    toast: makeEl('div'), phone: makeEl('div')
+  };
+  const document = {
+    getElementById: id => byId[id] || null,
+    createElement: makeEl,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    body: makeEl('body'),
+    documentElement: makeEl('html'),
+    addEventListener() {}
+  };
+  const timers = [];
+  const sb = {
+    document,
+    console,
+    window: { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {} },
+    matchMedia: () => ({ matches: false, addEventListener() {} }),
+    setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
+    clearTimeout() {},
+    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    location: { href: '', hash: '' },
+    navigator: { userAgent: 'node' },
+    Audio: function () { this.play = () => {}; this.pause = () => {}; this.addEventListener = () => {}; },
+    alert() {}
+  };
+  sb.window.document = document;
+  sb.globalThis = sb;
+  vm.createContext(sb);
+  vm.runInContext(src, sb, { filename: 'preview-inline.js' });
+  sb.flush = () => {
+    let guard = 0;
+    while (timers.length && guard < 50) { timers.shift().fn(); guard += 1; }
+  };
+  sb.timers = timers;
+  return sb;
+}
+
 const byId = {
   screen: screenEl, nav: navEl, navTitle: navTitle, tabs: tabsEl,
   tabbar: tabsEl, words: wordsEl, theme: themeEl,
@@ -168,6 +215,96 @@ ok('卡片不再整卡可点翻面', !/data-act="flip"/.test(shown));
 ok('左上角第一个词无标记', !/class="stage-prev"/.test(shown) || st().idx > 0);
 ok('选项卡描边不是 undefined', !/border-color:undefined/.test(shown));
 ok('选项卡描边为合法颜色', /class="opt[^"]*"[^>]*border-color:rgba\(/.test(shown));
+
+console.log('\n[3d] 例句中目标词加黑加粗');
+ok('exSpan 已定义', typeof sandbox.exSpan === 'function');
+ok('exParts 已定义', typeof sandbox.exParts === 'function');
+ok('inflections 已定义', typeof sandbox.inflections === 'function');
+ok('CSS .ex-strong 存在', /\.ex-strong\s*\{/.test(html));
+/* 全量校验：每一句都能定位到目标词，且加粗片段就是该词 */
+const exPartsFn = sandbox.exParts;
+const exSpanFn = sandbox.exSpan;
+/* IRREGULAR 是脚本作用域里的 const，不在 sandbox 上，用同 context 求值取引用 */
+const IRREG = vm.runInContext('(typeof IRREGULAR === "undefined" ? {} : IRREGULAR)', sandbox);
+let exWithEx = 0, exLocated = 0, exSplit = 0, exNotVerbatim = 0, exNoBold = 0;
+let exInflected = 0;
+for (const it of words) {
+  if (!it.ex || !it.ex[0]) continue;
+  exWithEx += 1;
+  const parts = exPartsFn(it.ex[0], it.w);
+  const whole = parts.map(p => p.t).join('');
+  if (whole !== sandbox.exText(it.ex[0])) exNotVerbatim += 1;
+  const bolds = parts.filter(p => p.b);
+  if (bolds.length === 0) exNoBold += 1;
+  else {
+    exLocated += 1;
+    /* 加粗内容必须是该词的某个形式：等于原形，或落在屈折候选表里。
+       （circulate → Circulating 属于正常情况，不算切歪） */
+    const got = bolds[0].t.toLowerCase();
+    const wl = String(it.w).toLowerCase();
+    const forms = sandbox.inflections(wl);
+    const irr = IRREG[wl] || [];
+    const allowed = got === wl || forms.indexOf(got) >= 0 || irr.indexOf(got) >= 0;
+    if (!allowed) exSplit += 1;
+    else if (got !== wl) exInflected += 1;
+  }
+}
+ok('全部 ' + exWithEx + ' 条例句都能定位到目标词', exLocated === exWithEx,
+  exLocated + '/' + exWithEx + '，' + exNoBold + ' 条没定位到');
+ok('加粗片段就是目标词本身（含屈折形式，不是碎片）', exSplit === 0,
+  exSplit + ' 条切歪；其中 ' + exInflected + ' 条是屈折形式（正常）');
+ok('切分后拼回去与原文完全一致', exNotVerbatim === 0, exNotVerbatim + ' 条不一致');
+/* 关键屈折形式抽查 */
+ok('circulate 能匹配到 Circulating',
+  (() => { const r = exSpanFn('Circulating blood helps transfer the body heat out to the air.', 'circulate');
+    return r && 'Circulating blood helps transfer the body heat out to the air.'.slice(r[0], r[1]).toLowerCase() === 'circulating'; })());
+ok('undergo 能匹配到 underwent',
+  (() => { const r = exSpanFn('I underwent so much suffering in early years.', 'undergo');
+    return r && 'I underwent so much suffering in early years.'.slice(r[0], r[1]).toLowerCase() === 'underwent'; })());
+/* equip 在句中有两个干扰点：expedition（含 equip 片段）在前，equipped 在后。
+   必须命中 equipped，绝不能切到 expedition 里那 5 个字母。 */
+ok('equip 命中 equipped 且不误切 expedition',
+  (() => {
+    const s = 'He equipped himself for an expedition to the jungle.';
+    const r = exSpanFn(s, 'equip');
+    if (!r) return false;
+    const seg = s.slice(r[0], r[1]).toLowerCase();
+    return seg === 'equipped';
+  })());
+ok('例句行内联加粗用的是 <b class="ex-strong">', /class="ex-strong"/.test(screenEl.innerHTML) || !st().list[0].ex);
+
+console.log('\n[3e] Bug 修复：选错后翻到单词卡不留错误答案残留');
+/* 直接重新加载一份干净的脚本作用域，避免前面用例的状态干扰 */
+const sb2 = makeSandbox();
+sb2.act('learn');
+const st2 = () => vm.runInContext('(study)', sb2);
+const scr2 = sb2.document.getElementById('screen');
+/* 先就地造一个带红框的元素（模拟「选错」已标红），再选对翻面 */
+const residueEl = makeEl('div');
+residueEl.classList.add('bad');
+residueEl.style.borderColor = '#FF3B30';
+/* 记录 querySelectorAll('.opt') 返回的元素，供清理断言检查 */
+const optEls = [residueEl];
+scr2.querySelectorAll = sel => (sel === '.opt' ? optEls : []);
+scr2.querySelector = sel => (sel === '.flip-box' ? makeEl('div') : null);
+/* 先把一个错误项标红（真实流程） */
+const w2 = st2().opts.findIndex(o => !o.ok);
+sb2.act('pick', { dataset: { i: String(w2) } });
+const tookBad = st2().opts[w2].st === 'bad';
+/* 再选对 */
+const r2 = st2().opts.findIndex(o => o.ok);
+sb2.act('pick', { dataset: { i: String(r2) } });
+sb2.flush();
+ok('前置：确实先选错了一次', tookBad);
+ok('BUG-1 翻面后 study.opts 里的对错标记全清空',
+  st2().opts.every(o => o.st === ''), JSON.stringify(st2().opts.map(o => o.st)));
+ok('BUG-2 红框元素的 bad 类已移除', !residueEl.classList.contains('bad'),
+  'cls=' + Array.from(residueEl.classList._s).join(','));
+ok('BUG-3 红框内联描边已清空', !residueEl.style.borderColor, 'bc=' + residueEl.style.borderColor);
+ok('BUG-4 flipped 到单词卡', st2().show === true);
+/* 复位屏幕桩，别影响后续用例 */
+scr2.querySelectorAll = () => [];
+scr2.querySelector = () => null;
 
 console.log('\n[3b] 点击灵敏度：命中区、手势与事件');
 ok('选项卡加大内边距', /\.opt\{[^}]*padding:13px 12px/.test(html.replace(/\s+/g, ' ')) || /\.opt\{[^}]*padding:13px/.test(html.replace(/\n/g, '')));

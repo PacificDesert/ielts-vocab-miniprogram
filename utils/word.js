@@ -329,8 +329,178 @@ function exText(s) {
     .trim();
 }
 
+/**
+ * 末尾辅音是否需要双写（equip → equipped、stop → stopped、rain → raining）。
+ * 条件：以「元音 + 单个末尾辅音」收尾，且末尾辅音前面不是会阻止双写的元音组合。
+ * 元音组合只列真正阻断双写的那些（ai/ea/ee/oa/oo/ue…）；
+ * 不能笼统判「末尾两个字母都是元音」—— equip 的 stem 是 equi，
+ * 结尾 ui 也算双元音，那样会把 equipped 一起挡掉，所以 ui 单独放行。
+ */
+const VOWEL_DIGRAPH = /(ai|ay|ea|ee|ei|ey|ie|oa|oe|oi|oo|ou|oy|ue|au|eu|ew)$/;
+
+function isDoubling(base) {
+  if (!/[aeiou][^aeiouwxy]$/.test(base)) return false;
+  const stem = base.slice(0, -1);          // 去掉末尾辅音
+  const tail = stem.slice(-2);
+  // ui 结尾：equip → equipped 需要双写（quit / fruit 之类不在词库的例句里，
+  // 且这里生成的是「候选形式」，多一个候选只会多一次尝试，不会误伤）
+  if (tail === 'ui') return true;
+  return !VOWEL_DIGRAPH.test(stem);
+}
+
+/**
+ * 例句里目标词的屈折形式候选。
+ * 例句中该词大多不是原形（circulate → Circulating、undergo → underwent），
+ * 所以按词根 + 常见后缀生成候选，再配合 IRREGULAR 补不规则形式。
+ */
+function inflections(w) {
+  const base = String(w || '').toLowerCase();
+  const set = {};
+  const add = s => { if (s && s.length >= 2) set[s] = 1; };
+  add(base);
+  add(base + 's');
+  add(base + 'es');
+  // y → ies / ied（carry → carries / carried）
+  if (/[^aeiou]y$/.test(base)) { add(base.slice(0, -1) + 'ies'); add(base.slice(0, -1) + 'ied'); }
+  if (/[^aeiou]o$/.test(base)) add(base + 'es');
+  add(base + 'ed');
+  add(base + 'd');
+  add(base + 'ing');
+  // 以 e 结尾：去 e 加 ing / ed（revise → revising）
+  if (/e$/.test(base)) { add(base.slice(0, -1) + 'ing'); add(base.slice(0, -1) + 'ed'); }
+  // 双写末尾辅音（equip → equipped / equipping、stop → stopped）
+  // 条件：以「元音 + 单个末尾辅音」结尾，且末尾辅音前面不是两个相邻元音
+  //（rain → raining，不双写 n）。
+  // 别写成 [^aeiou][aeiou][^aeiouwxy]$：equip 里的 u 是元音，会被这个式子误判掉。
+  if (isDoubling(base)) {
+    add(base + base.slice(-1) + 'ing');
+    add(base + base.slice(-1) + 'ed');
+  }
+  // -ic 加 k（mimic → mimicked）
+  if (/ic$/.test(base)) { add(base + 'k'); add(base + 'ked'); add(base + 'king'); }
+  add(base + 'ly');
+  add(base + 'er');
+  add(base + 'est');
+  if (/e$/.test(base)) { add(base.slice(0, -1) + 'er'); add(base.slice(0, -1) + 'est'); }
+  if (isDoubling(base)) {
+    add(base + base.slice(-1) + 'er');
+    add(base + base.slice(-1) + 'est');
+  }
+  // 连字符词：shade-tolerant → shade tolerant / shade- tolerant（例句常在连字符后插空格）
+  if (base.indexOf('-') > 0) {
+    add(base.replace(/-/g, ''));
+    add(base.replace(/-/g, ' '));
+    add(base.replace(/-/g, '- '));
+  }
+  return Object.keys(set);
+}
+
+/** 不规则变化补充表（只收常见词，取不到就退回「不高亮」，不会硬编） */
+const IRREGULAR = {
+  alga: ['algae'], craftsman: ['craftsmen'], man: ['men'], woman: ['women'],
+  undergo: ['underwent', 'undergone'], understand: ['understood'],
+  arise: ['arose', 'arisen'], bear: ['bore', 'borne'], begin: ['began', 'begun'],
+  bind: ['bound'], bite: ['bit', 'bitten'], bleed: ['bled'], blow: ['blew', 'blown'],
+  break: ['broke', 'broken'], bring: ['brought'], build: ['built'], buy: ['bought'],
+  catch: ['caught'], choose: ['chose', 'chosen'], come: ['came'], cost: ['cost'],
+  cut: ['cut'], deal: ['dealt'], dig: ['dug'], do: ['did', 'done'],
+  draw: ['drew', 'drawn'], drink: ['drank', 'drunk'], drive: ['drove', 'driven'],
+  eat: ['ate', 'eaten'], fall: ['fell', 'fallen'], feed: ['fed'], feel: ['felt'],
+  fight: ['fought'], find: ['found'], fly: ['flew', 'flown'],
+  forbid: ['forbade', 'forbidden'], forget: ['forgot', 'forgotten'],
+  forgive: ['forgave', 'forgiven'], freeze: ['froze', 'frozen'], get: ['got', 'gotten'],
+  give: ['gave', 'given'], go: ['went', 'gone'], grow: ['grew', 'grown'],
+  hang: ['hung'], have: ['had'], hear: ['heard'], hide: ['hid', 'hidden'],
+  hit: ['hit'], hold: ['held'], hurt: ['hurt'], keep: ['kept'],
+  know: ['knew', 'known'], lay: ['laid'], lead: ['led'], leave: ['left'],
+  lend: ['lent'], let: ['let'], lie: ['lay', 'lain'], lose: ['lost'],
+  make: ['made'], mean: ['meant'], meet: ['met'], pay: ['paid'], put: ['put'],
+  read: ['read'], ride: ['rode', 'ridden'], ring: ['rang', 'rung'],
+  rise: ['rose', 'risen'], run: ['ran'], say: ['said'], see: ['saw', 'seen'],
+  seek: ['sought'], sell: ['sold'], send: ['sent'], set: ['set'],
+  shake: ['shook', 'shaken'], shine: ['shone'], shoot: ['shot'],
+  show: ['showed', 'shown'], shrink: ['shrank', 'shrunk'], shut: ['shut'],
+  sing: ['sang', 'sung'], sink: ['sank', 'sunk'], sit: ['sat'], sleep: ['slept'],
+  slide: ['slid'], speak: ['spoke', 'spoken'], spend: ['spent'], split: ['split'],
+  spread: ['spread'], stand: ['stood'], steal: ['stole', 'stolen'],
+  stick: ['stuck'], strike: ['struck'], swear: ['swore', 'sworn'],
+  sweep: ['swept'], swim: ['swam', 'swum'], swing: ['swung'],
+  take: ['took', 'taken'], teach: ['taught'], tear: ['tore', 'torn'],
+  tell: ['told'], think: ['thought'], throw: ['threw', 'thrown'],
+  wake: ['woke', 'woken'], wear: ['wore', 'worn'], win: ['won'],
+  wind: ['wound'], withdraw: ['withdrew', 'withdrawn'], write: ['wrote', 'written'],
+  analysis: ['analyses'], crisis: ['crises'], thesis: ['theses'],
+  phenomenon: ['phenomena'], criterion: ['criteria'], datum: ['data'],
+  bacterium: ['bacteria'], medium: ['media'], stimulus: ['stimuli'],
+  nucleus: ['nuclei'], radius: ['radii'], fungus: ['fungi'], cactus: ['cacti'],
+  appendix: ['appendices'], index: ['indices', 'indexes'], matrix: ['matrices'],
+  syllabus: ['syllabi'], life: ['lives'], knife: ['knives'], wife: ['wives'],
+  leaf: ['leaves'], half: ['halves'], shelf: ['shelves'], wolf: ['wolves'],
+  thief: ['thieves'], self: ['selves'], foot: ['feet'], tooth: ['teeth'],
+  goose: ['geese'], mouse: ['mice'], louse: ['lice'], child: ['children'],
+  sheep: ['sheep'], deer: ['deer'], fish: ['fish', 'fishes'],
+  species: ['species'], series: ['series'], means: ['means'],
+  equipment: ['equipment'], furniture: ['furniture'], information: ['information'],
+  knowledge: ['knowledge'], advice: ['advice'], luggage: ['luggage'],
+  baggage: ['baggage']
+};
+
+/**
+ * 在例句中定位目标词（含各种屈折形式），返回 [start, end) 或 null。
+ * 优先「整词边界」匹配（避免 equip 命中 expedition 里的片段）；
+ * 都找不到时退一步按子串找 —— 词库里有 OCR 粘连（"mistoftears"）。
+ */
+function exSpan(sentence, w) {
+  const s = String(sentence === undefined || sentence === null ? '' : sentence);
+  const base = String(w || '').toLowerCase();
+  if (!s || !base) return null;
+  const cands = inflections(base);
+  const irr = IRREGULAR[base];
+  if (irr) irr.forEach(x => { if (cands.indexOf(x) < 0) cands.push(x); });
+  // 长的优先：先试 underwent 再试 undergo，避免只切到词根
+  cands.sort((a, b) => b.length - a.length);
+  const low = s.toLowerCase();
+
+  for (let k = 0; k < cands.length; k += 1) {
+    const c = cands[k];
+    if (c.length < 2) continue;
+    const re = new RegExp('(^|[^a-z])(' + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?=[^a-z]|$)', 'i');
+    const m = re.exec(low);
+    if (m) {
+      const start = m.index + m[1].length;
+      return [start, start + c.length];
+    }
+  }
+  // 兜底：无边界子串（OCR 粘连），但仍要求长度 >= 4 以免误命中
+  for (let k = 0; k < cands.length; k += 1) {
+    const c = cands[k];
+    if (c.length < 4) continue;
+    const at = low.indexOf(c);
+    if (at >= 0) return [at, at + c.length];
+  }
+  return null;
+}
+
+/**
+ * 把例句切成若干段，标出目标词那一段，供页面加黑加粗。
+ * 返回 [{ t: '文本', b: true|false }]，拼起来等于 exText(sentence)。
+ * 定位不到目标词时返回单段（整句都不加粗），绝不猜。
+ * 注意：切分基于 exText 之后的文本，所以朗读用的字符串与显示完全一致。
+ */
+function exParts(sentence, w) {
+  const text = exText(sentence);
+  if (!text) return [];
+  const span = exSpan(text, w);
+  if (!span) return [{ t: text, b: false }];
+  const out = [];
+  if (span[0] > 0) out.push({ t: text.slice(0, span[0]), b: false });
+  out.push({ t: text.slice(span[0], span[1]), b: true });
+  if (span[1] < text.length) out.push({ t: text.slice(span[1]), b: false });
+  return out;
+}
+
 module.exports = {
   all, get, chapterList, chapterWords, search, slice,
-  themeImage, card, similar, forms, prevTag, options, example, exText,
+  themeImage, card, similar, forms, prevTag, options, example, exText, exSpan, exParts,
   total: words.list.length
 };

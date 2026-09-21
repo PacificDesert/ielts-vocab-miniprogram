@@ -158,6 +158,8 @@ body.dark .side h1{color:#fff}
 /* 例句卡（正面）：例句是主体，字号比原来更大一档，小喇叭跟着例句走 */
 .stage-ex-line{display:flex;align-items:flex-start;justify-content:center;gap:6px;margin-top:0;padding:0 8px;max-width:100%}
 .stage-ex-t{font-size:17px;line-height:1.6;font-weight:500;text-align:center;word-break:break-word;opacity:1}
+/* 例句里的目标词：加黑加粗（<b> 默认就有 font-weight:bold，这里再压一档并加描边） */
+.stage-ex-t .ex-strong{font-weight:800;text-shadow:0 0 .3px currentColor}
 /* 例句行的小喇叭：只用 CSS 画，颜色随卡片正文色走 */
 .ex-speak{position:relative;flex:none;width:24px;height:24px;margin-left:1px;cursor:pointer;touch-action:manipulation;transform:translateZ(0)}
 .ex-speak .horn{position:absolute;left:3px;top:7px;width:11px;height:11px}
@@ -531,6 +533,139 @@ function soundOn() { return S.sound !== false; }
 function exText(s) {
   return String(s === undefined || s === null ? '' : s)
     .replace(/《([^》]*)》/g, '$1').replace(/\s+/g, ' ').trim();
+}
+
+/** 末尾辅音是否要双写（equip → equipped、stop → stopped、rain → raining）。
+    条件：以「元音 + 单个末尾辅音」收尾，且末尾辅音前面不是会阻断双写的元音组合。
+    别笼统判「末尾两字母都是元音」—— equip 的 stem 是 equi，ui 也算双元音，
+    那样会把 equipped 一起挡掉，所以 ui 单独放行（生成的是候选形式，多一个不会误伤）。 */
+const VOWEL_DIGRAPH = /(ai|ay|ea|ee|ei|ey|ie|oa|oe|oi|oo|ou|oy|ue|au|eu|ew)$/;
+function isDoubling(base) {
+  if (!/[aeiou][^aeiouwxy]$/.test(base)) return false;
+  const stem = base.slice(0, -1);
+  const tail = stem.slice(-2);
+  if (tail === 'ui') return true;
+  return !VOWEL_DIGRAPH.test(stem);
+}
+
+/** 例句中目标词的屈折形式候选（与 utils/word.js 的 inflections 保持一致） */
+function inflections(w) {
+  const base = String(w || '').toLowerCase();
+  const set = {};
+  const add = s => { if (s && s.length >= 2) set[s] = 1; };
+  add(base); add(base + 's'); add(base + 'es');
+  if (/[^aeiou]y$/.test(base)) { add(base.slice(0, -1) + 'ies'); add(base.slice(0, -1) + 'ied'); }
+  if (/[^aeiou]o$/.test(base)) add(base + 'es');
+  add(base + 'ed'); add(base + 'd'); add(base + 'ing');
+  if (/e$/.test(base)) { add(base.slice(0, -1) + 'ing'); add(base.slice(0, -1) + 'ed'); }
+  if (isDoubling(base)) {
+    add(base + base.slice(-1) + 'ing'); add(base + base.slice(-1) + 'ed');
+  }
+  if (/ic$/.test(base)) { add(base + 'k'); add(base + 'ked'); add(base + 'king'); }
+  add(base + 'ly'); add(base + 'er'); add(base + 'est');
+  if (/e$/.test(base)) { add(base.slice(0, -1) + 'er'); add(base.slice(0, -1) + 'est'); }
+  if (isDoubling(base)) {
+    add(base + base.slice(-1) + 'er'); add(base + base.slice(-1) + 'est');
+  }
+  if (base.indexOf('-') > 0) {
+    add(base.replace(/-/g, '')); add(base.replace(/-/g, ' ')); add(base.replace(/-/g, '- '));
+  }
+  return Object.keys(set);
+}
+
+/** 不规则变化补充表（与 utils/word.js 的 IRREGULAR 保持一致） */
+const IRREGULAR = {
+  alga: ['algae'], craftsman: ['craftsmen'], man: ['men'], woman: ['women'],
+  undergo: ['underwent', 'undergone'], understand: ['understood'],
+  arise: ['arose', 'arisen'], bear: ['bore', 'borne'], begin: ['began', 'begun'],
+  bind: ['bound'], bite: ['bit', 'bitten'], bleed: ['bled'], blow: ['blew', 'blown'],
+  break: ['broke', 'broken'], bring: ['brought'], build: ['built'], buy: ['bought'],
+  catch: ['caught'], choose: ['chose', 'chosen'], come: ['came'], cost: ['cost'],
+  cut: ['cut'], deal: ['dealt'], dig: ['dug'], do: ['did', 'done'],
+  draw: ['drew', 'drawn'], drink: ['drank', 'drunk'], drive: ['drove', 'driven'],
+  eat: ['ate', 'eaten'], fall: ['fell', 'fallen'], feed: ['fed'], feel: ['felt'],
+  fight: ['fought'], find: ['found'], fly: ['flew', 'flown'],
+  forbid: ['forbade', 'forbidden'], forget: ['forgot', 'forgotten'],
+  forgive: ['forgave', 'forgiven'], freeze: ['froze', 'frozen'], get: ['got', 'gotten'],
+  give: ['gave', 'given'], go: ['went', 'gone'], grow: ['grew', 'grown'],
+  hang: ['hung'], have: ['had'], hear: ['heard'], hide: ['hid', 'hidden'],
+  hit: ['hit'], hold: ['held'], hurt: ['hurt'], keep: ['kept'],
+  know: ['knew', 'known'], lay: ['laid'], lead: ['led'], leave: ['left'],
+  lend: ['lent'], let: ['let'], lie: ['lay', 'lain'], lose: ['lost'],
+  make: ['made'], mean: ['meant'], meet: ['met'], pay: ['paid'], put: ['put'],
+  read: ['read'], ride: ['rode', 'ridden'], ring: ['rang', 'rung'],
+  rise: ['rose', 'risen'], run: ['ran'], say: ['said'], see: ['saw', 'seen'],
+  seek: ['sought'], sell: ['sold'], send: ['sent'], set: ['set'],
+  shake: ['shook', 'shaken'], shine: ['shone'], shoot: ['shot'],
+  show: ['showed', 'shown'], shrink: ['shrank', 'shrunk'], shut: ['shut'],
+  sing: ['sang', 'sung'], sink: ['sank', 'sunk'], sit: ['sat'], sleep: ['slept'],
+  slide: ['slid'], speak: ['spoke', 'spoken'], spend: ['spent'], split: ['split'],
+  spread: ['spread'], stand: ['stood'], steal: ['stole', 'stolen'],
+  stick: ['stuck'], strike: ['struck'], swear: ['swore', 'sworn'],
+  sweep: ['swept'], swim: ['swam', 'swum'], swing: ['swung'],
+  take: ['took', 'taken'], teach: ['taught'], tear: ['tore', 'torn'],
+  tell: ['told'], think: ['thought'], throw: ['threw', 'thrown'],
+  wake: ['woke', 'woken'], wear: ['wore', 'worn'], win: ['won'],
+  wind: ['wound'], withdraw: ['withdrew', 'withdrawn'], write: ['wrote', 'written'],
+  analysis: ['analyses'], crisis: ['crises'], thesis: ['theses'],
+  phenomenon: ['phenomena'], criterion: ['criteria'], datum: ['data'],
+  bacterium: ['bacteria'], medium: ['media'], stimulus: ['stimuli'],
+  nucleus: ['nuclei'], radius: ['radii'], fungus: ['fungi'], cactus: ['cacti'],
+  appendix: ['appendices'], index: ['indices', 'indexes'], matrix: ['matrices'],
+  syllabus: ['syllabi'], life: ['lives'], knife: ['knives'], wife: ['wives'],
+  leaf: ['leaves'], half: ['halves'], shelf: ['shelves'], wolf: ['wolves'],
+  thief: ['thieves'], self: ['selves'], foot: ['feet'], tooth: ['teeth'],
+  goose: ['geese'], mouse: ['mice'], louse: ['lice'], child: ['children'],
+  sheep: ['sheep'], deer: ['deer'], fish: ['fish', 'fishes'],
+  species: ['species'], series: ['series'], means: ['means'],
+  equipment: ['equipment'], furniture: ['furniture'], information: ['information'],
+  knowledge: ['knowledge'], advice: ['advice'], luggage: ['luggage'],
+  baggage: ['baggage']
+};
+
+/** 在例句里定位目标词（含屈折形式），返回 [start, end) 或 null */
+function exSpan(sentence, w) {
+  const s = String(sentence === undefined || sentence === null ? '' : sentence);
+  const base = String(w || '').toLowerCase();
+  if (!s || !base) return null;
+  const cands = inflections(base);
+  const irr = IRREGULAR[base];
+  if (irr) irr.forEach(x => { if (cands.indexOf(x) < 0) cands.push(x); });
+  cands.sort((a, b) => b.length - a.length);
+  const low = s.toLowerCase();
+  for (let k = 0; k < cands.length; k += 1) {
+    const c = cands[k];
+    if (c.length < 2) continue;
+    const re = new RegExp('(^|[^a-z])(' + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?=[^a-z]|$)', 'i');
+    const m = re.exec(low);
+    if (m) {
+      const start = m.index + m[1].length;
+      return [start, start + c.length];
+    }
+  }
+  for (let k = 0; k < cands.length; k += 1) {
+    const c = cands[k];
+    if (c.length < 4) continue;
+    const at = low.indexOf(c);
+    if (at >= 0) return [at, at + c.length];
+  }
+  return null;
+}
+
+/**
+ * 把例句切成 [{t, b}] 段落，b=true 的那段是目标词 —— 页面据此加黑加粗。
+ * 拼起来等于 exText(sentence)；定位不到就整句返回（都不加粗）。
+ */
+function exParts(sentence, w) {
+  const text = exText(sentence);
+  if (!text) return [];
+  const span = exSpan(text, w);
+  if (!span) return [{ t: text, b: false }];
+  const out = [];
+  if (span[0] > 0) out.push({ t: text.slice(0, span[0]), b: false });
+  out.push({ t: text.slice(span[0], span[1]), b: true });
+  if (span[1] < text.length) out.push({ t: text.slice(span[1]), b: false });
+  return out;
 }
 
 /** 自动发音：静音模式下什么都不做 */
@@ -1025,7 +1160,7 @@ function vStudy() {
     + '<div class="stage-mono" style="color:' + cs.ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>'
     + (w.ex && w.ex[0]
         ? '<div class="stage-ex-line" style="color:' + cs.fg + '">'
-          + '<span class="stage-ex-t">' + esc(exText(w.ex[0])) + '</span>'
+          + '<span class="stage-ex-t">' + exParts(w.ex[0], w.w).map(p => (p.b ? '<b class="ex-strong">' + esc(p.t) + '</b>' : esc(p.t))).join('') + '</span>'
           + '<span class="ex-speak" data-act="speakex">' + speakerGlyph() + '</span></div>'
         : '')
     + '<div class="opts">'
@@ -1400,6 +1535,18 @@ function act(a, el) {
     /* 选对后 0.4s 翻到背面看释义 / 章节，再按底部按钮记熟练度 */
     setTimeout(() => {
       study.show = true;
+      /* 翻到单词卡之前，把选项卡上的对错标记全部清掉：
+         背面（单词卡）只有单词/音标/释义，本不该出现选项，
+         而 backface-visibility 在部分浏览器会穿透，先前选错留下的红框
+         会在单词卡上残留一块。 */
+      (study.opts || []).forEach(x => { x.st = ''; });
+      const scr3 = $('screen');
+      if (scr3 && scr3.querySelectorAll) {
+        scr3.querySelectorAll('.opt').forEach(x => {
+          x.classList.remove('ok'); x.classList.remove('bad');
+          x.style.borderColor = '';
+        });
+      }
       const box = $('screen') && $('screen').querySelector ? $('screen').querySelector('.flip-box') : null;
       if (box) box.classList.add('flip-on'); else render();
       renderActions();

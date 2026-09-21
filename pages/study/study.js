@@ -28,7 +28,7 @@ Page(flip.mixin({
     prevTag: '',
     opts: [],
     picked: false,
-    curEx: '',
+    exParts: [],
     canSpeak: !!config.AUDIO_API,
     speaking: false,
     turnSpeed: null
@@ -86,7 +86,8 @@ Page(flip.mixin({
 
   /** 点小喇叭：朗读当前单词的例句，并高亮一下喇叭 */
   onSpeakEx() {
-    this.speakText(this.data.cur && this.data.cur.exRaw);
+    const cur = this.data.cur;
+    this.speakText(cur && cur.ex && cur.ex[0] ? cur.ex[0] : '');
     this.setData({ speaking: true });
     setTimeout(() => this.setData({ speaking: false }), 600);
   },
@@ -113,13 +114,14 @@ Page(flip.mixin({
     const exRaw = cur.ex && cur.ex[0] ? cur.ex[0] : '';
     this.setData({
       cur,
-      // 例句去掉《例词》书名号后显示 / 朗读（接口会把书名号也念出来）
-      curEx: word.exText(exRaw),
+      // 例句：去掉《例词》书名号（接口会把书名号也念出来），并把目标词单独切出来加黑加粗
+      exParts: word.exParts(exRaw, cur.w),
       // 正面「选释义」的四个选项卡：正确释义 + 3 个形近词释义，每张卡重新打乱顺序
       opts: cur.w ? shuffle(word.options(cur, 4).map(o => ({ cn: o.cn, ok: o.ok, st: '' }))) : [],
       // 左上角标记上一个单词的拼写 / 音标 / 中文释义；第一个单词为空（不显示）
       prevTag: word.prevTag(list, idx - 1),
       show: false,
+      picked: false,
       canSpeak: !!config.AUDIO_API && store.soundOn(),
       card: cur.w ? word.card(cur.ch, cur.w, this.data.dark) : {}
     }, () => {
@@ -165,7 +167,10 @@ Page(flip.mixin({
     }
     this.setData({ opts: next, picked: true });
     this._pickTimer = setTimeout(() => {
-      this.setData({ show: true });
+      // 翻到单词卡之前，把选项卡上的对错标记全部清掉。
+      // 背面（单词卡）只有单词/音标/释义，本就不该出现选项；而 iOS 下
+      // backface-visibility 偶发穿透，先前选错留下的红框会在单词卡上残留一块。
+      this.setData({ show: true, opts: this.data.opts.map(o => Object.assign({}, o, { st: '' })) });
       this.revealBack();
     }, 400);
   },

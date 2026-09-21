@@ -94,6 +94,12 @@
   text-align: center;
   word-break: break-word;
 }
+/* 例句里的目标词：加黑加粗，一眼看出这个词在句中怎么用 */
+.ex-strong {
+  font-weight: 800;
+  /* 只加粗在部分安卓机上对比不够，再叠一层同色描边把字迹压厚 */
+  text-shadow: 0 0 0.4rpx currentColor;
+}
 /* 例句行的小喇叭：只用 CSS 画（不引图片），颜色随卡片正文色走
    命中区比图形本身大一圈，手机上更好点 */
 .ex-speak {
