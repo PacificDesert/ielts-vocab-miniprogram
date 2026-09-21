@@ -135,7 +135,7 @@ body.dark .side h1{color:#fff}
 .stage-card{
   background:var(--card);border-radius:18px;padding:44px 22px;min-height:300px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;
-  box-shadow:0 1px 3px rgba(0,0,0,.05);
+  box-shadow:0 1px 3px rgba(0,0,0,.05);perspective:1200px;
 }
 .stage-word{font-size:36px;font-weight:700;letter-spacing:-.6px;word-break:break-word}
 .stage-ph{font-size:15px;color:var(--text2);margin-top:8px}
@@ -355,10 +355,14 @@ function turnTo(dir, fn) {
   turn = 'turn-out-' + d;
   render();
   setTimeout(() => {
-    fn();
+    /* 先切成「翻入」类再执行 fn：fn 内部若触发渲染（如「认识」切拓展页），
+       新内容就直接以翻入动画出现，不会先误播一遍翻出 */
     turn = 'turn-in-' + d;
+    fn();
     render();
-    setTimeout(() => { turning = false; }, 400);
+    /* 动画播完清掉翻页类：否则之后任何 render()（翻面、提示、切 tab……）
+       都会带着 turn-in 类重播一遍翻入动画 */
+    setTimeout(() => { turning = false; turn = ''; }, 420);
   }, 200);
 }
 function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
@@ -1082,7 +1086,19 @@ function act(a, el) {
     else match.pickR = match.pickR === i ? -1 : i;
     return judgeMatch();
   }
-  if (a === 'flip') { study.show = !study.show; return render(); }
+  if (a === 'flip') {
+    study.show = !study.show;
+    /* 关键：翻面必须就地改 class，不能走 render() ——
+       render 是 innerHTML 全量重建，新插入的元素天生带着 flip-on，
+       transition 永远不会触发，看起来就是瞬间跳变、没有动画 */
+    const scr = $('screen');
+    const box = scr && scr.querySelector ? scr.querySelector('.flip-box') : null;
+    if (box) {
+      if (study.show) box.classList.add('flip-on'); else box.classList.remove('flip-on');
+      return;
+    }
+    return render();
+  }
   if (a === 'known' || a === 'unknown') {
     const known = a === 'known';
     if (cur.screen === 'study') {
@@ -1097,10 +1113,13 @@ function act(a, el) {
         save();
       };
       if (known && S.showExpand) {
-        advance();
-        cur.word = byWord[target.toLowerCase()];
-        cur.expandFrom = 'study';
-        return show('expand', 'study');
+        /* 先翻走当前卡，再切到拓展页，保证「认识」也有翻页动画 */
+        return turnTo('next', () => {
+          advance();
+          cur.word = byWord[target.toLowerCase()];
+          cur.expandFrom = 'study';
+          show('expand', 'study');
+        });
       }
       return turnTo('next', advance);
     }
