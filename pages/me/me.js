@@ -74,6 +74,12 @@ Page({
     this.refresh();
   },
 
+  onToggleSound(e) {
+    store.toggleSound(e.detail.value);
+    this.refresh();
+    wx.showToast({ title: e.detail.value ? '有声模式' : '静音模式', icon: 'none' });
+  },
+
   onThemeMode(e) {
     theme.setMode(e.currentTarget.dataset.v);
   },

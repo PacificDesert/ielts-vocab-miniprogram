@@ -28,6 +28,9 @@ Page(flip.mixin({
     prevTag: '',
     opts: [],
     picked: false,
+    curEx: '',
+    canSpeak: !!config.AUDIO_API,
+    speaking: false,
     turnSpeed: null
   },
 
@@ -35,13 +38,13 @@ Page(flip.mixin({
     // 从拓展页「下一个单词」进来时带 ?i=<词库下标>，直接以该词为起点开一组记忆卡
     const idx = q && q.i !== undefined && q.i !== '' ? Number(q.i) : NaN;
     this.start = isNaN(idx) ? -1 : idx;
-    // 例句发音：与拓展页同一套（config.AUDIO_API 未配置时隐藏按钮）
+    // 发音：记忆卡正面读单词、背面读例句，与拓展页同一套音源
     this.audio = config.AUDIO_API ? wx.createInnerAudioContext() : null;
     if (this.audio) this.audio.onError(() => wx.showToast({ title: '发音加载失败', icon: 'none' }));
     const list = this.pickBatch();
     // 记下这一组，背完后可以直接拿来做「意思匹配」
     getApp().globalData.lastBatch = list;
-    this.setData(Object.assign({ list, done: !list.length }, getApp().themeData()), () => this.sync());
+    this.setData(Object.assign({ list, done: !list.length }, getApp().themeData()), () => this.sync(true));
   },
 
   onUnload() {
@@ -50,6 +53,7 @@ Page(flip.mixin({
       clearTimeout(this._pickTimer);
       this._pickTimer = null;
     }
+    if (this.audio) this.audio.stop();
     if (this.audio) {
       this.audio.destroy();
       this.audio = null;
@@ -58,15 +62,33 @@ Page(flip.mixin({
 
   onShow() {
     this.setData(getApp().themeData());
+    // 从拓展页返回时，用户在「我的」里改过有声模式，回来立刻生效
+    this.setData({ canSpeak: !!config.AUDIO_API && store.soundOn() });
   },
 
-  /** 朗读当前单词的例句（用例句文本喂给同一个发音接口） */
-  onSpeakEx() {
-    const ex = this.data.cur && this.data.cur.ex;
-    if (!this.audio || !ex || !ex[0]) return;
-    this.audio.stop();
-    this.audio.src = config.AUDIO_API + encodeURIComponent(ex[0]);
+  /** 是否处于有声模式（静音模式下不自动出声） */
+  soundOn() {
+    return !!config.AUDIO_API && store.soundOn();
+  },
+
+  /**
+   * 朗读一段文本。
+   * keyword 之外会先停掉上一段：连点两张卡时不至于两句话叠在一起。
+   */
+  speakText(text, keyword) {
+    if (!this.audio || !this.soundOn() || !text) return;
+    const t = word.exText(text);
+    if (!t) return;
+    if (!keyword) this.audio.stop();
+    this.audio.src = config.AUDIO_API + encodeURIComponent(t);
     this.audio.play();
+  },
+
+  /** 点小喇叭：朗读当前单词的例句，并高亮一下喇叭 */
+  onSpeakEx() {
+    this.speakText(this.data.cur && this.data.cur.exRaw);
+    this.setData({ speaking: true });
+    setTimeout(() => this.setData({ speaking: false }), 600);
   },
 
   /** start >= 0 说明是拓展页跳转进来的，按起点取词；否则走正常的学习游标 */
@@ -80,18 +102,47 @@ Page(flip.mixin({
     if (cur && cur.w) this.setData({ card: word.card(cur.ch, cur.w, getApp().themeData().dark) });
   },
 
-  sync() {
+  /**
+   * 渲染当前这张卡。
+   * autoSpeak 只在「真正换了一个词」时传 true —— 主题重绘、从拓展页返回之类的
+   * 重渲染不传，否则每切一次主题就自动念一遍。
+   */
+  sync(autoSpeak) {
     const { list, idx } = this.data;
     const cur = list[idx] || {};
+    const exRaw = cur.ex && cur.ex[0] ? cur.ex[0] : '';
     this.setData({
       cur,
+      // 例句去掉《例词》书名号后显示 / 朗读（接口会把书名号也念出来）
+      curEx: word.exText(exRaw),
       // 正面「选释义」的四个选项卡：正确释义 + 3 个形近词释义，每张卡重新打乱顺序
       opts: cur.w ? shuffle(word.options(cur, 4).map(o => ({ cn: o.cn, ok: o.ok, st: '' }))) : [],
       // 左上角标记上一个单词的拼写 / 音标 / 中文释义；第一个单词为空（不显示）
       prevTag: word.prevTag(list, idx - 1),
       show: false,
+      canSpeak: !!config.AUDIO_API && store.soundOn(),
       card: cur.w ? word.card(cur.ch, cur.w, this.data.dark) : {}
+    }, () => {
+      if (!cur.w) return;
+      if (!this.soundOn()) return;
+      // 有声模式默认行为（例句卡在前、单词卡在后）：
+      //   · 正面「选释义」= 例句卡 —— 读整句例句，听到句子里这个词的用法，
+      //     再凭语感挑出对应的中文释义；
+      //   · 选对后翻到背面 = 单词卡 —— 读单词读音，确认这个词本身怎么念。
+      this.speakText(exRaw || cur.w, true);
     });
+  },
+
+  /**
+   * 翻到背面（单词卡）：有声模式下读单词读音 —— 与正面例句卡的例句朗读区分开。
+   */
+  revealBack() {
+    this.speakText(this.data.cur && this.data.cur.w, true);
+  },
+
+  /** 点单词本身也能听一次读音 */
+  onSpeakWord() {
+    this.speakText(this.data.cur && this.data.cur.w, true);
   },
 
   /**
@@ -113,7 +164,10 @@ Page(flip.mixin({
       return;
     }
     this.setData({ opts: next, picked: true });
-    this._pickTimer = setTimeout(() => this.setData({ show: true }), 400);
+    this._pickTimer = setTimeout(() => {
+      this.setData({ show: true });
+      this.revealBack();
+    }, 400);
   },
 
   /**
@@ -149,7 +203,7 @@ Page(flip.mixin({
         idx: finished ? idx : nextIdx,
         done: finished
       }, () => {
-        if (!finished) this.sync();
+        if (!finished) this.sync(true);
       });
     };
 
@@ -165,7 +219,7 @@ Page(flip.mixin({
   again() {
     const list = this.pickBatch();
     getApp().globalData.lastBatch = list;
-    this.setData({ list, idx: 0, done: !list.length, right: 0, wrong: 0, show: false }, () => this.sync());
+    this.setData({ list, idx: 0, done: !list.length, right: 0, wrong: 0, show: false }, () => this.sync(true));
   },
 
   /** 学完一组后做「单词意思匹配」 */

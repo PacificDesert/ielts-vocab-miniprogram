@@ -56,6 +56,35 @@
   word-break: break-word;
 }
 .quiz-ph { margin-top: 20rpx; font-size: 28rpx; color: var(--text2); }
+/* 题目卡上的小喇叭（图形与记忆卡例句行同一套，颜色走卡片正文色） */
+.quiz-speak {
+  position: relative;
+  width: 56rpx;
+  height: 56rpx;
+  margin: 24rpx auto 0;
+  touch-action: manipulation;
+}
+.quiz-speak .horn { position: absolute; left: 10rpx; top: 16rpx; width: 24rpx; height: 24rpx; }
+.quiz-speak .horn-body {
+  position: absolute; left: 0; top: 7rpx;
+  width: 8rpx; height: 10rpx; background: currentColor; border-radius: 1rpx;
+}
+.quiz-speak .horn-cone {
+  position: absolute; left: 7rpx; top: 0; width: 0; height: 0;
+  border-top: 12rpx solid transparent;
+  border-bottom: 12rpx solid transparent;
+  border-right: 18rpx solid currentColor;
+}
+.quiz-speak .horn-wave {
+  position: absolute; border-radius: 50%;
+  border: 2rpx solid currentColor;
+  border-left-color: transparent;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+.quiz-speak .horn-wave.w1 { left: 29rpx; top: 19rpx; width: 16rpx; height: 18rpx; }
+.quiz-speak .horn-wave.w2 { left: 29rpx; top: 12rpx; width: 30rpx; height: 32rpx; opacity: 0.72; }
+.quiz-speak.on { opacity: 0.6; }
 .quiz-result { margin-top: 40rpx; font-size: 32rpx; font-weight: 500; }
 .quiz-result.ok { color: var(--green); }
 .quiz-result.no { color: var(--red); }

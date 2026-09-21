@@ -15,7 +15,8 @@ Page(flip.mixin({
     ex: null,
     dr: [],
     card: {},
-    canSpeak: !!config.AUDIO_API
+    canSpeak: !!config.AUDIO_API,
+    sound: true
   },
 
   onLoad(query) {
@@ -24,14 +25,15 @@ Page(flip.mixin({
     const target = decodeURIComponent(query.w || '');
     let i = this.list.findIndex(it => it.w === target);
     if (i < 0) i = 0;
-    this.audio = wx.createInnerAudioContext();
-    this.audio.onError(() => wx.showToast({ title: '发音加载失败', icon: 'none' }));
+    this.audio = config.AUDIO_API ? wx.createInnerAudioContext() : null;
+    if (this.audio) this.audio.onError(() => wx.showToast({ title: '发音加载失败', icon: 'none' }));
     this.setData({ total: this.list.length });
     this.show(i);
   },
 
   onShow() {
     this.setData(getApp().themeData());
+    this.setData({ canSpeak: !!config.AUDIO_API && store.soundOn() });
   },
 
   syncTheme() {
@@ -42,6 +44,7 @@ Page(flip.mixin({
   onUnload() {
     this.stopTurn();
     if (this.audio) {
+      this.audio.stop();
       this.audio.destroy();
       this.audio = null;
     }
@@ -59,9 +62,12 @@ Page(flip.mixin({
       lv: store.status(it.w),
       ex: word.example(it),
       dr: it.dr || [],
-      card: word.card(it.ch, it.w, this.data.dark)
+      card: word.card(it.ch, it.w, this.data.dark),
+      sound: store.soundOn()
     });
     wx.setNavigationBarTitle({ title: it.w });
+    // 有声模式：进入详情页读一遍这个单词
+    if (this.data.canSpeak && this.data.sound) this.speakWord(it.w, true);
   },
 
   prev() {
@@ -75,9 +81,14 @@ Page(flip.mixin({
   },
 
   play() {
-    if (!this.audio) return;
-    this.audio.stop();
-    this.audio.src = config.AUDIO_API + encodeURIComponent(this.data.w);
+    this.speakWord(this.data.w);
+  },
+
+  /** keyword 为 true 时不打断正在播的内容（自动发音用，避免连点叠音） */
+  speakWord(w, keyword) {
+    if (!w || !this.audio) return;
+    if (!keyword) this.audio.stop();
+    this.audio.src = config.AUDIO_API + encodeURIComponent(w);
     this.audio.play();
   },
 

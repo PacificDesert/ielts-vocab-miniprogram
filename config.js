@@ -15,7 +15,10 @@ module.exports = {
   DEFAULT_PLAN: {
     perRound: 20,
     showExpand: true,
-    autoSync: true
+    autoSync: true,
+    // 有声模式（默认开）：进入单词卡自动读单词读音，翻到背面自动读例句；
+    // 关掉即静音模式。可在「我的」→ 学习计划 里随时切换。
+    sound: true
   },
   // 每组单词数下限；上限按词库总量自然封顶（不额外限制）
   PLAN_MIN: 1

@@ -138,7 +138,7 @@ body.dark .side h1{color:#fff}
   display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:0 1px 3px rgba(0,0,0,.05);perspective:1200px;
 }
-.stage-word{font-size:36px;font-weight:700;letter-spacing:-.6px;word-break:break-word}
+.stage-word{font-size:36px;font-weight:700;letter-spacing:-.6px;word-break:break-word;cursor:pointer}
 .stage-ph{font-size:15px;color:var(--text2);margin-top:8px}
 /* 记忆卡翻面：正面单词、背面释义，绕 Y 轴转 180° */
 .flip-box{position:relative;width:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.42,0,.28,1)}
@@ -155,19 +155,31 @@ body.dark .side h1{color:#fff}
 .stage-hint{font-size:13px;color:var(--text3);margin-top:26px}
 /* 正面主单词加黑：比背面释义更重一档 */
 .flip-face .stage-word{font-weight:800}
-/* 例句：比单词更淡更小，可点发音 */
-.stage-ex-line{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:0 8px;max-width:100%}
-.stage-ex-t{font-size:11px;line-height:1.55;opacity:.72;text-align:center;word-break:break-word}
-.ex-speak{flex:none;font-size:10px;line-height:1;padding:4px 8px;border-radius:99px;border:1px solid currentColor;opacity:.75;cursor:pointer}
+/* 例句卡（正面）：例句是主体，字号比原来更大一档，小喇叭跟着例句走 */
+.stage-ex-line{display:flex;align-items:flex-start;justify-content:center;gap:6px;margin-top:0;padding:0 8px;max-width:100%}
+.stage-ex-t{font-size:17px;line-height:1.6;font-weight:500;text-align:center;word-break:break-word;opacity:1}
+/* 例句行的小喇叭：只用 CSS 画，颜色随卡片正文色走 */
+.ex-speak{position:relative;flex:none;width:24px;height:24px;margin-left:1px;cursor:pointer;touch-action:manipulation;transform:translateZ(0)}
+.ex-speak .horn{position:absolute;left:3px;top:7px;width:11px;height:11px}
+.ex-speak .horn-body{position:absolute;left:0;top:3.5px;width:4px;height:4px;background:currentColor;border-radius:.5px}
+.ex-speak .horn-cone{position:absolute;left:3.5px;top:0;width:0;height:0;border-top:5.5px solid transparent;border-bottom:5.5px solid transparent;border-right:8px solid currentColor}
+.ex-speak .horn-wave{position:absolute;border-radius:50%;border:1px solid currentColor;border-left-color:transparent;border-top-color:transparent;border-bottom-color:transparent}
+.ex-speak .horn-wave.w1{left:12px;top:8px;width:8px;height:9px}
+.ex-speak .horn-wave.w2{left:12px;top:5px;width:15px;height:16px;opacity:.72}
+.ex-speak:hover{opacity:.6}
+.ex-speak.on{opacity:1}
 /* 四个释义选项卡 */
 .opts{width:100%;margin-top:22px;display:flex;flex-direction:column;gap:8px}
 .opt{
-  width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid;
+  width:100%;box-sizing:border-box;padding:13px 12px;border-radius:10px;border:1px solid;
   font-size:14px;line-height:1.45;text-align:center;word-break:break-word;cursor:pointer;
-  transition:background-color .18s ease,transform .18s ease,opacity .18s ease;
+  /* 关键：让浏览器不用等「双击缩放」判定，点一下立即生效（消除约 300ms 延迟） */
+  touch-action:manipulation;
+  transition:background-color .15s ease,opacity .15s ease;
   background:transparent;
 }
-.opt:hover{transform:scale(.985);opacity:.85}
+/* 只用透明度做反馈：不用 scale —— 缩放会重排卡片，连续快点时第一次点击容易落空 */
+.opt:hover{opacity:.6}
 .opt.ok,.opt.ok:hover{border-color:#34C759 !important;background:rgba(52,199,89,.18);color:#1B7A36 !important;font-weight:600;opacity:1}
 .opt.bad,.opt.bad:hover{border-color:#FF3B30 !important;background:rgba(255,59,48,.16);color:#B3231B !important;opacity:.95}
 .actions{display:flex;gap:12px;padding:18px 18px 0}
@@ -181,6 +193,16 @@ body.dark .side h1{color:#fff}
 .quiz-cn{font-size:20px;line-height:1.5}
 .quiz-mask{font-size:20px;color:var(--text2);margin-top:26px;letter-spacing:3px;word-break:break-word}
 .quiz-ph{font-size:14px;color:var(--text2);margin-top:10px}
+/* 拼写题目卡上的小喇叭（图形与例句行同一套，颜色走卡片正文色） */
+.quiz-speak{position:relative;width:28px;height:28px;margin:12px auto 0;cursor:pointer;touch-action:manipulation}
+.quiz-speak .horn{position:absolute;left:4px;top:8px;width:12px;height:12px}
+.quiz-speak .horn-body{position:absolute;left:0;top:4px;width:4px;height:5px;background:currentColor;border-radius:.5px}
+.quiz-speak .horn-cone{position:absolute;left:4px;top:0;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:9px solid currentColor}
+.quiz-speak .horn-wave{position:absolute;border-radius:50%;border:1px solid currentColor;border-left-color:transparent;border-top-color:transparent;border-bottom-color:transparent}
+.quiz-speak .horn-wave.w1{left:14px;top:9.5px;width:8px;height:9px}
+.quiz-speak .horn-wave.w2{left:14px;top:6px;width:15px;height:16px;opacity:.72}
+.quiz-speak:hover{opacity:.6}
+.quiz-speak.on{opacity:1}
 .quiz-res{font-size:16px;font-weight:500;margin-top:20px}
 /* 判定结果的进场动画：正确弹入，错误左右抖一下 */
 .pop{animation:popIn .35s cubic-bezier(.34,1.56,.64,1) both}
@@ -323,6 +345,7 @@ body.dark .side h1{color:#fff}
       <li>「我的」→ <b>外观</b> 可切「跟随系统 / 浅色 / 深色」，整机界面跟着变</li>
       <li>「我的」里 <b>每组单词数</b> 可自己输入，<b>最少 1、不设上限</b>（最多按词库 3328 词）</li>
       <li>嫌拓展页打扰？「我的」里关掉「认识后看拓展」即可</li>
+      <li><b>有声模式</b>：默认开 —— 进入单词卡自动读单词读音、翻到背面自动读例句；不想听就点例句旁的小喇叭手动读，或在「我的」里切到<b>静音模式</b></li>
       <li>进度存在浏览器本地，刷新不丢</li>
     </ul>
     <h2>和真机的差异</h2>
@@ -352,7 +375,7 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
-  return { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: 20, showExpand: true, theme: 'auto' };
+  return { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: 20, showExpand: true, sound: true, theme: 'auto' };
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
@@ -498,6 +521,34 @@ function speak(w) {
     u.lang = 'en-GB'; u.rate = .9;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   } catch (e) { toast('发音不可用'); }
+}
+
+/* 有声模式（与小程序 config.DEFAULT_PLAN.sound 一致）：
+   true = 进入单词卡自动读单词读音、翻到背面自动读例句 */
+function soundOn() { return S.sound !== false; }
+
+/** 剥掉例句里的《例词》书名号 —— 朗读和显示都用它，否则 TTS 会把书名号一起念出来 */
+function exText(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/《([^》]*)》/g, '$1').replace(/\s+/g, ' ').trim();
+}
+
+/** 自动发音：静音模式下什么都不做 */
+let speakingTimer = null;
+function say(text) {
+  if (!soundOn() || !text) return;
+  speak(exText(text));
+}
+/** 点喇叭时的短暂高亮 */
+function flashSpeak(el) {
+  if (!el) return;
+  el.classList.add('on');
+  clearTimeout(speakingTimer);
+  speakingTimer = setTimeout(() => {
+    const s = $('screen');
+    if (s && s.querySelectorAll) s.querySelectorAll('.ex-speak.on,.quiz-speak.on').forEach(x => x.classList.remove('on'));
+    if (el.classList) el.classList.remove('on');
+  }, 600);
 }
 
 const ICONS = {
@@ -880,6 +931,12 @@ function simList(w, act) {
     + '</div><div class="hint">点相近词可直接翻到该词，右侧圆钮读它的读音</div></div>';
 }
 
+/* 纯 CSS 画的小喇叭（不引图片），颜色继承父级 currentColor —— 卡片按章节上色也不会发灰 */
+function speakerGlyph() {
+  return '<span class="horn"><span class="horn-body"></span><span class="horn-cone"></span></span>'
+    + '<span class="horn-wave w1"></span><span class="horn-wave w2"></span>';
+}
+
 function lvTag(v) { return v >= 3 ? '已掌握' : v > 0 ? '复习中' : '未学习'; }
 
 function vDetail() {
@@ -948,6 +1005,10 @@ function vStudy() {
     study.optsWord = w.w;
     study.opts = shuffleArr(optionsFor(w, 4).map(o => ({ cn: o.cn, ok: o.ok, st: '' })));
     study.picked = false;
+    /* 有声模式默认行为（例句卡在前、单词卡在后）：
+       正面「选释义」= 例句卡 —— 读整句例句，听到句子里这个词的用法，
+       再凭语感挑出对应的中文释义；选对后翻到背面 = 单词卡，才读单词读音。 */
+    say(w.ex && w.ex[0] ? w.ex[0] : w.w);
   }
   const opts = study.opts;
   const pv = prevTag(study.list, study.idx - 1);
@@ -959,15 +1020,13 @@ function vStudy() {
     + '<div class="stage-veil" style="background:' + cs.veil + '"></div>'
     + (pv ? '<div class="stage-prev" style="color:' + cs.fg2 + '">' + esc(pv) + '</div>' : '')
     + '<div class="flip-box' + (study.show ? ' flip-on' : '') + '">'
-    /* 正面：加黑的大单词 + 更淡更小的例句（可发音） + 四个释义选项卡 */
+    /* 正面 = 例句卡（先出）：例句（可发音） + 四个释义选项卡 */
     + '<div class="flip-face">'
     + '<div class="stage-mono" style="color:' + cs.ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>'
-    + '<div class="stage-word" style="color:' + cs.fg + '">' + esc(w.w) + '</div>'
-    + (w.ph ? '<div class="stage-ph" style="color:' + cs.ph + '">' + esc(w.ph) + '</div>' : '')
     + (w.ex && w.ex[0]
-        ? '<div class="stage-ex-line" style="color:' + cs.fg2 + '">'
-          + '<span class="stage-ex-t">' + esc(w.ex[0]) + '</span>'
-          + '<span class="ex-speak" data-act="speakex">发音</span></div>'
+        ? '<div class="stage-ex-line" style="color:' + cs.fg + '">'
+          + '<span class="stage-ex-t">' + esc(exText(w.ex[0])) + '</span>'
+          + '<span class="ex-speak" data-act="speakex">' + speakerGlyph() + '</span></div>'
         : '')
     + '<div class="opts">'
     + opts.map((o, i) => '<div class="opt ' + o.st + '" data-act="pick" data-i="' + i + '"'
@@ -975,11 +1034,12 @@ function vStudy() {
         + esc(o.cn) + '</div>').join('')
     + '</div>'
     + '</div>'
+    /* 背面 = 单词卡（后出）：大单词（可点读）+ 音标 + 释义 + 章节 */
     + '<div class="flip-face flip-back">'
-    + '<div class="stage-word" style="color:' + cs.fg + '">' + esc(w.w) + '</div>'
+    + '<div class="stage-word" data-act="speakword" style="color:' + cs.fg + '">' + esc(w.w) + '</div>'
+    + (w.ph ? '<div class="stage-ph" style="color:' + cs.ph + '">' + esc(w.ph) + '</div>' : '')
     + '<div class="stage-line"></div>'
     + '<div class="stage-cn" style="color:' + cs.fg + '">' + esc(w.cn) + '</div>'
-    + (w.ex ? '<div class="stage-ex" style="color:' + cs.fg2 + '">' + esc(w.ex[0]) + '</div>' : '')
     + '<div class="stage-ch" style="color:' + cs.fg2 + '">' + esc(w.ch) + '</div>'
     + '</div></div>'
     + '</div></div></div>'
@@ -1007,6 +1067,11 @@ function vSpell() {
   const c = spell.list[spell.idx];
   const cs = cardStyle(c.ch);
   const art = themeImg(c.ch);
+  /* 有声模式：每换一个词先读一遍读音（用 spoke 记账，避免 innerHTML 重建时重复出声） */
+  if (spell.spoke !== spell.idx) {
+    spell.spoke = spell.idx;
+    say(c.w);
+  }
   return '<div class="bar-head"><div class="bar"><i style="width:' + (spell.idx / spell.list.length * 100) + '%"></i></div>'
     + '<div class="bar-txt">' + (spell.idx + 1) + ' / ' + spell.list.length + ' · 正确 ' + spell.right + '</div></div>'
     + '<div class="turn-wrap ' + turn + '" style="' + turnCss + '">'
@@ -1017,6 +1082,7 @@ function vSpell() {
     + (prevTag(spell.list, spell.idx - 1, { forms: true }) ? '<div class="stage-prev" style="color:' + cs.fg2 + '">' + esc(prevTag(spell.list, spell.idx - 1, { forms: true })) + '</div>' : '')
     + '<div class="quiz"><div class="quiz-cn" style="color:' + cs.fg + '">' + esc(c.cn) + '</div>'
     + '<div class="quiz-mask" style="color:' + cs.fg2 + '">' + esc(mask(c.w, spell.reveal || 0)) + '</div>'
+    + (spell.checked || !soundOn() ? '' : '<div class="quiz-speak" data-act="speakq" style="color:' + cs.fg + '">' + speakerGlyph() + '</div>')
     + (spell.checked && c.ph ? '<div class="quiz-ph" style="color:' + cs.ph + '">' + esc(c.ph) + '</div>' : '')
     + (spell.checked ? (spell.ok ? '<div class="quiz-res ok pop">拼写正确</div>' : '<div class="quiz-res no shake">正确答案：' + esc(c.w) + '</div>') : '')
     + '</div>'
@@ -1166,6 +1232,10 @@ function vMe() {
     + '<div class="cell-title">认识后看拓展</div>'
     + '<div class="cell-sub">标记「认识」后展示例句与相近单词</div></div>'
     + '<div class="switch' + (S.showExpand ? ' on' : '') + '" data-act="toggleExpand"><i></i></div></div>'
+    + '<div class="cell" style="cursor:default"><div class="cell-main">'
+    + '<div class="cell-title">有声模式</div>'
+    + '<div class="cell-sub">进入单词卡自动读单词读音，翻到背面自动读例句；关掉即静音</div></div>'
+    + '<div class="switch' + (soundOn() ? ' on' : '') + '" data-act="toggleSound"><i></i></div></div>'
     + '</div></div>'
     + '<div class="group"><div class="group-title">多设备同步</div><div class="card">'
     + '<div class="cell" style="cursor:default"><div class="cell-main">'
@@ -1249,6 +1319,18 @@ function bind(s) {
     ans.oninput = () => { spell.input = ans.value; };
     ans.onkeydown = e => { if (e.key === 'Enter') submitSpell(); };
   }
+  /* 选项卡与喇叭走 pointerup：手机上不用等「点击判定」结束（否则要按几次才选中）。
+     pointerdown 在当前元素上触发过才认，滑动时不误触发。 */
+  s.querySelectorAll('.opt,.ex-speak,.quiz-speak').forEach(el => {
+    el.onpointerdown = () => { el.dataset._down = '1'; };
+    el.onpointerup = () => {
+      if (el.dataset._down !== '1') return;
+      delete el.dataset._down;
+      act(el.dataset.act, el);
+    };
+    el.onpointercancel = () => { delete el.dataset._down; };
+    el.onpointerleave = () => { delete el.dataset._down; };
+  });
   s.querySelectorAll('[data-act]').forEach(el => el.onclick = () => act(el.dataset.act, el));
 }
 
@@ -1315,17 +1397,32 @@ function act(a, el) {
     o.st = 'ok';
     study.picked = true;
     if (el2) { el2.classList.remove('bad'); el2.classList.add('ok'); el2.style.borderColor = '#34C759'; }
-    /* 选对后 0.4s 翻到背面看释义 / 例句 / 章节，再按底部按钮记熟练度 */
+    /* 选对后 0.4s 翻到背面看释义 / 章节，再按底部按钮记熟练度 */
     setTimeout(() => {
       study.show = true;
       const box = $('screen') && $('screen').querySelector ? $('screen').querySelector('.flip-box') : null;
       if (box) box.classList.add('flip-on'); else render();
       renderActions();
+      /* 翻到背面 = 单词卡：读单词读音 —— 正面例句卡读的才是例句 */
+      const cw = study.list[study.idx];
+      say(cw ? cw.w : '');
     }, 400);
     return;
   }
   if (a === 'speakex') {
-    if (study && study.list[study.idx] && study.list[study.idx].ex) speak(study.list[study.idx].ex[0]);
+    if (study && study.list[study.idx] && study.list[study.idx].ex) speak(exText(study.list[study.idx].ex[0]));
+    flashSpeak(el);
+    return;
+  }
+  /* 点单词本身也能听一次读音（静音模式下依然可手动点） */
+  if (a === 'speakword') {
+    if (study && study.list[study.idx]) speak(study.list[study.idx].w);
+    return;
+  }
+  /* 拼写页题目卡上的喇叭：重听当前单词 */
+  if (a === 'speakq') {
+    if (spell && spell.list[spell.idx]) speak(spell.list[spell.idx].w);
+    flashSpeak(el);
     return;
   }
   if (a === 'flip') {
@@ -1411,6 +1508,11 @@ function act(a, el) {
   if (a === 'decPlan') { S.plan = clampPlan(S.plan - planStep(S.plan)); save(); return render(); }
   if (a === 'incPlan') { S.plan = clampPlan(S.plan + planStep(S.plan)); save(); return render(); }
   if (a === 'toggleExpand') { S.showExpand = !S.showExpand; save(); return render(); }
+  if (a === 'toggleSound') {
+    S.sound = !soundOn(); save(); render();
+    toast(soundOn() ? '有声模式' : '静音模式');
+    return;
+  }
   if (a === 'speak') return speak(w.w);
   if (a === 'clrq') { cur.keyword = ''; return render(); }
   if (a === 'hint') { spell.reveal = Math.min(2, (spell.reveal || 0) + 1); return render(); }
@@ -1429,7 +1531,7 @@ function act(a, el) {
   if (a === 'syncNow') return toast('预览里没有云环境，真机配置后可用');
   if (a === 'about') return toast('3328 词 · 22 章节 · 3000+ 条书中例句');
   if (a === 'reset') {
-    S = { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: S.plan, showExpand: S.showExpand, theme: S.theme };
+    S = { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: S.plan, showExpand: S.showExpand, sound: S.sound, theme: S.theme };
     save(); return render();
   }
 }
@@ -1454,7 +1556,7 @@ function submitSpell() {
   } else { spell.wrong++; mark(c.w, -2, false); day().spell++; save(); render(); }
 }
 function startSpell() {
-  spell = { list: nextSpell(S.plan), idx: 0, checked: false, ok: false, input: '', right: 0, wrong: 0, reveal: 0, done: false };
+  spell = { list: nextSpell(S.plan), idx: 0, checked: false, ok: false, input: '', right: 0, wrong: 0, reveal: 0, done: false, spoke: -1 };
   cur.tab = 'spell';
   show('spell');
 }

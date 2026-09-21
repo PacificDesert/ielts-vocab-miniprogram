@@ -1,5 +1,6 @@
 const store = require('../../utils/store');
 const word = require('../../utils/word');
+const config = require('../../config');
 const flip = require('../../utils/flip');
 
 /** 答对后翻页要比平时慢一些，让人来得及看一眼上一个单词的标记 */
@@ -33,20 +34,50 @@ Page(flip.mixin({
     right: 0,
     wrong: 0,
     acc: 0,
-    done: false
+    done: false,
+    canSpeak: !!config.AUDIO_API,
+    speaking: false
   },
 
   onLoad() {
+    // 拼写页也走有声模式：看到中文释义时先听一遍读音更有提示作用
+    this.audio = config.AUDIO_API ? wx.createInnerAudioContext() : null;
+    if (this.audio) this.audio.onError(() => wx.showToast({ title: '发音加载失败', icon: 'none' }));
     this.again();
   },
 
   onShow() {
     this.setData(getApp().themeData());
+    this.setData({ canSpeak: !!config.AUDIO_API && store.soundOn() });
     if (!this.data.list.length) this.again();
   },
 
   onUnload() {
     this.stopTurn();
+    if (this.audio) {
+      this.audio.stop();
+      this.audio.destroy();
+      this.audio = null;
+    }
+  },
+
+  soundOn() {
+    return !!config.AUDIO_API && store.soundOn();
+  },
+
+  /** 读一个单词；keyword 为 true 时不打断正在播的内容 */
+  speakWord(w, keyword) {
+    if (!this.audio || !this.soundOn() || !w) return;
+    if (!keyword) this.audio.stop();
+    this.audio.src = config.AUDIO_API + encodeURIComponent(w);
+    this.audio.play();
+  },
+
+  /** 点题目卡上的喇叭：重听当前单词 */
+  onSpeak() {
+    this.speakWord(this.data.cur && this.data.cur.w);
+    this.setData({ speaking: true });
+    setTimeout(() => this.setData({ speaking: false }), 600);
   },
 
   syncTheme() {
@@ -79,7 +110,11 @@ Page(flip.mixin({
       checked: false,
       ok: false,
       reveal: 0,
+      canSpeak: !!config.AUDIO_API && store.soundOn(),
       mask: buildMask(cur.w || '', 0)
+    }, () => {
+      // 有声模式：每换一个词先读一遍读音
+      if (this.data.canSpeak && cur.w) this.speakWord(cur.w);
     });
   },
 

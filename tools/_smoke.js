@@ -140,7 +140,7 @@ ok('选项无重复', dup === 0, dup + ' 个重复');
 const tagged = words.length - posNo;
 ok('正确项带词性词数 >= 2000', tagged >= 2000, tagged + ' 个带词性');
 
-console.log('\n[3] 记忆卡正面渲染');
+console.log('\n[3] 记忆卡正面渲染（例句卡在前）');
 const act = sandbox.act;
 /* study / turn 是脚本作用域里的 let，不在 sandbox 上，用同 context 求值拿引用 */
 const peek = expr => vm.runInContext('(' + expr + ')', sandbox);
@@ -151,8 +151,17 @@ act('learn');
 const shown = screenEl.innerHTML;
 ok('渲染出四个选项卡', (shown.match(/class="opt /g) || []).length === 4,
   '实际 ' + (shown.match(/class="opt /g) || []).length + ' 个');
-ok('正面含例句行', /class="stage-ex-line"/.test(shown) || !st().list[0].ex);
-ok('例句有发音按钮', /class="ex-speak"/.test(shown) || !st().list[0].ex);
+/* 正面 = 例句卡：例句在前、四个选项卡在后；正面不再出现大单词 */
+const frontFace = (shown.match(/<div class="flip-face">([\s\S]*?)<div class="flip-face flip-back">/) || ['', ''])[1];
+ok('正面是例句卡（含例句行）', /class="stage-ex-line"/.test(frontFace) || !st().list[0].ex);
+ok('例句卡里没有大单词', !/class="stage-word"/.test(frontFace));
+const exPos = frontFace.indexOf('stage-ex-line');
+const optPos = frontFace.indexOf('class="opts"');
+ok('例句在选项卡前面（顺序不乱）', exPos >= 0 && optPos >= 0 && exPos < optPos,
+  'exPos=' + exPos + ' optPos=' + optPos);
+ok('例句旁是小喇叭（不再是「发音」两个字）', /class="ex-speak"[^>]*>.*horn/s.test(shown) && !/class="ex-speak"[^>]*>发音/.test(shown));
+ok('小喇叭是纯 CSS 画的（含喇叭口与声波）', /horn-cone/.test(shown) && /horn-wave/.test(shown));
+ok('单词卡（背面）才有单词且可点发音', /class="flip-face flip-back">[\s\S]*class="stage-word" data-act="speakword"/.test(shown));
 ok('未选答案时不给熟练度按钮', !/data-act="known"/.test(shown));
 ok('未选答案时显示提示', /actions-hint/.test(shown));
 ok('卡片不再整卡可点翻面', !/data-act="flip"/.test(shown));
@@ -160,35 +169,83 @@ ok('左上角第一个词无标记', !/class="stage-prev"/.test(shown) || st().i
 ok('选项卡描边不是 undefined', !/border-color:undefined/.test(shown));
 ok('选项卡描边为合法颜色', /class="opt[^"]*"[^>]*border-color:rgba\(/.test(shown));
 
+console.log('\n[3b] 点击灵敏度：命中区、手势与事件');
+ok('选项卡加大内边距', /\.opt\{[^}]*padding:13px 12px/.test(html.replace(/\s+/g, ' ')) || /\.opt\{[^}]*padding:13px/.test(html.replace(/\n/g, '')));
+ok('选项卡声明 touch-action:manipulation', /\.opt\{[^}]*touch-action:manipulation/.test(html.replace(/\s+/g, ' ')));
+ok('选项卡点按反馈不再用 scale（避免重排吞点击）', !/\.opt:hover\{transform:scale/.test(html.replace(/\s+/g, ' ')));
+ok('选项卡 / 喇叭走 pointerup 绑定', /querySelectorAll\('\.opt,\.ex-speak,\.quiz-speak'\)/.test(html));
+ok('pointerup 有 pointerdown 守卫（滑动不误触）', /onpointerdown[\s\S]{0,160}onpointerup/.test(html));
+
+console.log('\n[3c] 有声模式：选意思读例句，选完读单词');
+ok('默认有声（S.sound 缺省即有声）', peek('soundOn()') === true);
+ok('例句清理函数 exText 已定义', typeof sandbox.exText === 'function');
+ok('例句显示时已剥掉《》', !/《/.test(shown) || !st().list[0].ex);
+ok('小喇叭颜色随卡片正文色（内联 color 来自 cs.fg）', /class="ex-speak"[^>]*/.test(shown));
+/* 正面（选意思）读的是例句 */
+const spoken = [];
+vm.runInContext('__spy = []; const __origSay = say; say = function (t) { __spy.push(t); };', sandbox);
+act('again');
+ok('换卡后朗读的是例句（不是单词）',
+  peek('__spy').length > 0 && peek('__spy')[0] === (st().list[0].ex ? st().list[0].ex[0] : st().list[0].w),
+  '实际 ' + JSON.stringify(peek('__spy')[0]));
+ok('正面例句卡顺序：例句在选项卡之前', /stage-ex-line[\s\S]*class="opts"/.test(screenEl.innerHTML));
+/* 选对 → 翻到背面（单词卡） → 这时才读单词读音 */
+vm.runInContext('__spy.length = 0;', sandbox);
+const rIdx = st().opts.findIndex(o => o.ok);
+const fakeOkEl = makeEl('div');
+screenEl.querySelector = sel => (sel.indexOf('.opt[data-i') === 0 ? fakeOkEl : null);
+act('pick', { dataset: { i: String(rIdx) } });
+flushTimers();
+ok('翻到单词卡后朗读的是单词读音（不是例句）',
+  peek('__spy').length > 0 && peek('__spy').indexOf(st().list[st().idx].w) >= 0,
+  '实际 ' + JSON.stringify(peek('__spy')));
+vm.runInContext('say = __origSay;', sandbox);
+/* 静音模式 */
+vm.runInContext('S.sound = false;', sandbox);
+ok('静音模式：soundOn() 为 false', peek('soundOn()') === false);
+render2();
+ok('静音模式：例句行上的喇叭仍在（可手动点）', /class="ex-speak"/.test(screenEl.innerHTML) || !st().list[0].ex);
+vm.runInContext('S.sound = true;', sandbox);
+
 console.log('\n[4] 选对 → 翻到背面 → 放出按钮');
+/* [3c] 已经把上一张卡选掉了，这里必须换一张全新的卡再测 */
+act('again');
 const opts = st().opts;
 const rightIdx = opts.findIndex(o => o.ok);
 /* 造一个假的元素，让就地改 class 有落点 */
 const fakeOpt = makeEl('div');
-screenEl.querySelector = sel => (sel.indexOf('.opt[data-i') === 0 ? fakeOpt : null);
 const fakeBox = makeEl('div');
-const origQS = screenEl.querySelector;
-screenEl.querySelector = sel => (sel === '.flip-box' ? fakeBox : origQS(sel));
+screenEl.querySelector = sel => {
+  if (sel.indexOf('.opt[data-i') === 0) return fakeOpt;
+  if (sel === '.flip-box') return fakeBox;
+  return null;
+};
+const before4 = timers.length;
 act('pick', { dataset: { i: String(rightIdx) } });
 ok('正确项被标为 ok', st().opts[rightIdx].st === 'ok');
 ok('study.picked 置为 true', st().picked === true);
-ok('绿框已就地写入', fakeOpt.classList.contains('ok') && fakeOpt.style.borderColor === '#34C759');
-ok('翻面立刻发生（0.4s 后）', timers.length > 0);
+ok('绿框已就地写入', fakeOpt.classList.contains('ok') && fakeOpt.style.borderColor === '#34C759',
+  'cls=' + Array.from(fakeOpt.classList._s).join(',') + ' bc=' + fakeOpt.style.borderColor);
+ok('翻面立刻发生（0.4s 后）', timers.length > before4, 'before=' + before4 + ' now=' + timers.length);
 flushTimers();
-ok('0.4s 后 flip-on 已加上', fakeBox.classList.contains('flip-on'));
+ok('0.4s 后 flip-on 已加上', fakeBox.classList.contains('flip-on'),
+  'cls=' + Array.from(fakeBox.classList._s).join(','));
 ok('0.4s 后 study.show = true', st().show === true);
 
 console.log('\n[5] 选错 → 标红且不翻面');
 act('again');
+flushTimers();          /* 清掉换卡时排队的东西，下面只关心「选错」自己有没有排翻面 */
 const wrongIdx = st().opts.findIndex(o => !o.ok);
 st().picked = false;
 const fakeBad = makeEl('div');
 screenEl.querySelector = sel => (sel.indexOf('.opt[data-i') === 0 ? fakeBad : null);
+const before5 = timers.length;
 act('pick', { dataset: { i: String(wrongIdx) } });
 ok('错误项被标为 bad', st().opts[wrongIdx].st === 'bad');
 ok('红框已就地写入', fakeBad.classList.contains('bad') && fakeBad.style.borderColor === '#FF3B30');
 ok('选错后 study.picked 仍为 false', st().picked === false);
-ok('选错不触发翻面', timers.length === 0);
+ok('选错不触发翻面（没有新增计时器）', timers.length === before5);
+ok('选错没有翻到背面', st().show === false);
 /* 选错后仍可继续选正确的 */
 const rightIdx2 = st().opts.findIndex(o => o.ok);
 const fakeOk2 = makeEl('div');
@@ -231,6 +288,19 @@ console.log('\n[7] 拼写页与匹配页未被破坏');
 ok('vSpell 仍可调用', typeof sandbox.vSpell === 'function');
 ok('vMatch 仍可调用', typeof sandbox.vMatch === 'function');
 ok('拼写页慢速翻页仍在', /out: *420, *in: *700/.test(html.replace(/\s+/g, ' ')) || /out:420,in:700/.test(html));
+
+console.log('\n[8] 「我的」页的有声模式开关');
+act('home');
+peek('go("me")');
+const meHtml = screenEl.innerHTML;
+ok('「我的」页出现有声模式开关', /data-act="toggleSound"/.test(meHtml));
+ok('默认处于开启（switch on）', /class="switch on" data-act="toggleSound"/.test(meHtml));
+act('toggleSound', {});
+ok('点击后切为静音', peek('soundOn()') === false);
+ok('静态渲染也没问题', peek('soundOn()') === false);
+act('toggleSound', {});
+ok('再点回有声', peek('soundOn()') === true);
+ok('「重置学习进度」不清掉有声开关', /sound: S\.sound/.test(html));
 
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);

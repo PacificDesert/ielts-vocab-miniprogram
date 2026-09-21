@@ -61,6 +61,13 @@
         </view>
         <switch checked="{{plan.showExpand}}" color="{{dark ? '#0A84FF' : '#007AFF'}}" bindchange="onToggleExpand" />
       </view>
+      <view class="cell">
+        <view class="cell-main">
+          <view class="cell-title">有声模式</view>
+          <view class="cell-sub">进入单词卡自动读单词读音，翻到背面自动读例句；关掉即静音</view>
+        </view>
+        <switch checked="{{plan.sound}}" color="{{dark ? '#0A84FF' : '#007AFF'}}" bindchange="onToggleSound" />
+      </view>
     </view>
   </view>
 

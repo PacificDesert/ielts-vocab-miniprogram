@@ -23,6 +23,16 @@
             <view class="quiz-mask" style="color:{{card.fg2}}">{{mask}}</view>
             <view class="quiz-ph" style="color:{{card.ph}}" wx:if="{{checked && cur.ph}}">{{cur.ph}}</view>
 
+            <!-- 题目卡上的小喇叭：重听一遍这个单词的读音（有声模式才有） -->
+            <view class="quiz-speak {{speaking ? 'on' : ''}}" wx:if="{{canSpeak && !checked}}" catchtap="onSpeak">
+              <view class="horn">
+                <view class="horn-body"></view>
+                <view class="horn-cone"></view>
+              </view>
+              <view class="horn-wave w1"></view>
+              <view class="horn-wave w2"></view>
+            </view>
+
             <view class="quiz-result {{ok ? 'ok pop' : 'no shake'}}" wx:if="{{checked && ok}}">拼写正确</view>
             <view class="quiz-result {{ok ? 'ok pop' : 'no shake'}}" wx:if="{{checked && !ok}}">正确答案：{{cur.w}}</view>
           </view>

@@ -317,8 +317,20 @@ function example(it) {
   return { en: it.ex[0], zh: it.ex[1] || '' };
 }
 
+/**
+ * 例句正文（可发音）：把书名号的例词标记《word》剥掉，只留纯英文句子。
+ * 书中例句用《》标出该词，但 TTS / 词典接口会把书名号一起念出来，
+ * 所以朗读与显示都统一走这里。
+ */
+function exText(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/《([^》]*)》/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 module.exports = {
   all, get, chapterList, chapterWords, search, slice,
-  themeImage, card, similar, forms, prevTag, options, example,
+  themeImage, card, similar, forms, prevTag, options, example, exText,
   total: words.list.length
 };

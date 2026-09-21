@@ -17,16 +17,27 @@
           <!-- 左上角：上一个单词的拼写 / 音标 / 中文释义（第一个单词不显示） -->
           <view class="stage-prev" style="color:{{card.fg2}}" wx:if="{{prevTag}}">{{prevTag}}</view>
 
-          <!-- 正面：加黑的大单词 + 例句（可发音） + 四个释义选项卡；选对后翻到背面 -->
+          <!-- 正面 = 例句卡（先出）：例句 + 小喇叭 + 四个释义选项卡；选对后翻到背面 -->
           <view class="flip-box {{show ? 'flip-on' : ''}}">
             <view class="flip-face">
               <view class="stage-mono" style="color:{{card.ink}}">{{card.mono}}</view>
-              <view class="stage-word" style="color:{{card.fg}}">{{cur.w}}</view>
-              <view class="stage-ph" style="color:{{card.ph}}" wx:if="{{cur.ph}}">{{cur.ph}}</view>
 
-              <view class="stage-ex-line" style="color:{{card.fg2}}" wx:if="{{cur.ex}}">
-                <text class="stage-ex-t">{{cur.ex[0]}}</text>
-                <view class="ex-speak" catchtap="onSpeakEx">发音</view>
+              <view class="stage-ex-line" style="color:{{card.fg}}" wx:if="{{cur.ex}}">
+                <text class="stage-ex-t">{{curEx}}</text>
+                <view
+                  class="ex-speak {{speaking ? 'on' : ''}}"
+                  wx:if="{{canSpeak}}"
+                  hover-class="ex-speak-hover"
+                  hover-stay-time="80"
+                  catchtap="onSpeakEx"
+                >
+                  <view class="horn">
+                    <view class="horn-body"></view>
+                    <view class="horn-cone"></view>
+                  </view>
+                  <view class="horn-wave w1"></view>
+                  <view class="horn-wave w2"></view>
+                </view>
               </view>
 
               <view class="opts">
@@ -36,16 +47,20 @@
                   class="opt {{item.st}}"
                   style="border-color:{{card.line}};color:{{card.fg}}"
                   hover-class="opt-hover"
+                  hover-start-time="0"
+                  hover-stay-time="60"
                   data-i="{{index}}"
-                  catchtap="onPick"
+                  bindtap="onPick"
                 >{{item.cn}}</view>
               </view>
             </view>
+
+            <!-- 背面 = 单词卡（后出）：大单词（可点读）+ 音标 + 释义 + 章节 -->
             <view class="flip-face flip-back">
-              <view class="stage-word" style="color:{{card.fg}}">{{cur.w}}</view>
+              <view class="stage-word" style="color:{{card.fg}}" bindtap="onSpeakWord">{{cur.w}}</view>
+              <view class="stage-ph" style="color:{{card.ph}}" wx:if="{{cur.ph}}">{{cur.ph}}</view>
               <view class="stage-line"></view>
               <view class="stage-cn" style="color:{{card.fg}}">{{cur.cn}}</view>
-              <view class="stage-ex" style="color:{{card.fg2}}" wx:if="{{cur.ex}}">{{cur.ex[0]}}</view>
               <view class="stage-ch" style="color:{{card.fg2}}">{{cur.ch}}</view>
             </view>
           </view>

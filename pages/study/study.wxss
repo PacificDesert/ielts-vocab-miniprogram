@@ -44,7 +44,7 @@
   line-height: 1;
   opacity: 0.12;
 }
-/* 记忆卡翻面：正面单词、背面释义，绕 Y 轴转 180° */
+/* 记忆卡翻面：正面 = 例句卡（例句 + 选释义），背面 = 单词卡（大单词 + 释义） */
 .flip-box {
   position: relative;
   width: 100%;
@@ -75,36 +75,88 @@
   text-align: center;
   word-break: break-word;
 }
-/* 正面主单词：加黑（比背面释义更重） */
-.flip-face .stage-word { font-weight: 700; }
 .stage-ph { font-size: 30rpx; color: var(--text2); margin-top: 16rpx; }
 
-/* 例句：比单词更淡更小，可发音 */
+/* 例句卡（正面）：例句是主体，字号比原来更大一档，小喇叭跟着例句走 */
 .stage-ex-line {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 12rpx;
-  margin-top: 20rpx;
+  margin-top: 0;
   padding: 0 16rpx;
   max-width: 100%;
 }
 .stage-ex-t {
-  font-size: 22rpx;
-  line-height: 1.55;
-  opacity: 0.72;
+  font-size: 34rpx;
+  line-height: 1.6;
+  font-weight: 500;
   text-align: center;
   word-break: break-word;
 }
+/* 例句行的小喇叭：只用 CSS 画（不引图片），颜色随卡片正文色走
+   命中区比图形本身大一圈，手机上更好点 */
 .ex-speak {
+  position: relative;
   flex: none;
-  font-size: 20rpx;
-  line-height: 1;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  border: 2rpx solid currentColor;
-  opacity: 0.75;
+  width: 46rpx;
+  height: 46rpx;
+  margin-left: 2rpx;
+  touch-action: manipulation;
+  transform: translateZ(0);
 }
+.ex-speak .horn {
+  position: absolute;
+  left: 6rpx;
+  top: 13rpx;
+  width: 20rpx;
+  height: 20rpx;
+}
+/* 喇叭底：一个小矩形 */
+.horn-body {
+  position: absolute;
+  left: 0;
+  top: 6rpx;
+  width: 7rpx;
+  height: 8rpx;
+  background: currentColor;
+  border-radius: 1rpx;
+}
+/* 喇叭口：向右张开的梯形（用 border 拼） */
+.horn-cone {
+  position: absolute;
+  left: 6rpx;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-top: 10rpx solid transparent;
+  border-bottom: 10rpx solid transparent;
+  border-right: 15rpx solid currentColor;
+}
+/* 两道声波弧线：border 只留右侧 + 圆角 */
+.horn-wave {
+  position: absolute;
+  border: 2rpx solid currentColor;
+  border-left-color: transparent;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+}
+.horn-wave.w1 {
+  left: 22rpx;
+  top: 15rpx;
+  width: 14rpx;
+  height: 16rpx;
+}
+.horn-wave.w2 {
+  left: 22rpx;
+  top: 9rpx;
+  width: 26rpx;
+  height: 28rpx;
+  opacity: 0.72;
+}
+.ex-speak-hover { opacity: 0.6; }
+.ex-speak.on { opacity: 1; }
 
 /* 四个释义选项卡 */
 .opts {
@@ -117,16 +169,22 @@
 .opt {
   width: 100%;
   box-sizing: border-box;
-  padding: 22rpx 24rpx;
+  padding: 26rpx 24rpx;          /* 加大命中区：手机上更好点中 */
   border-radius: 20rpx;
   border: 2rpx solid;
   font-size: 28rpx;
   line-height: 1.45;
   text-align: center;
   word-break: break-word;
-  transition: background-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+  /* 关键：让浏览器不用等「双击缩放」判定，点击立即生效（消除约 300ms 延迟） */
+  touch-action: manipulation;
+  /* 提到独立合成层，避免点按时因整卡重排而吞掉第一次点击 */
+  transform: translateZ(0);
+  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
-.opt-hover { transform: scale(0.985); opacity: 0.85; }
+/* 只用透明度做点按反馈：不用 scale —— 缩放会让卡片重新排版，
+   连续快点时第一次点击容易落空 */
+.opt-hover { opacity: 0.6; }
 .opt.ok {
   border-color: #34C759 !important;
   background: rgba(52, 199, 89, 0.18);
@@ -141,14 +199,6 @@
 }
 .stage-line { width: 80rpx; height: 2rpx; background: var(--line); margin: 48rpx 0 32rpx; }
 .stage-cn { font-size: 34rpx; line-height: 1.6; text-align: center; }
-.stage-ex {
-  font-size: 26rpx;
-  color: var(--text2);
-  line-height: 1.6;
-  text-align: center;
-  margin-top: 24rpx;
-  padding: 0 8rpx;
-}
 .stage-ch { font-size: 24rpx; color: var(--text3); margin-top: 24rpx; }
 .stage-hint { font-size: 26rpx; color: var(--text3); margin-top: 60rpx; }
 /* 翻面时正面选项不要露出（iOS 下 backface 偶发穿透） */

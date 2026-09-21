@@ -218,6 +218,17 @@ function toggleAutoSync(on) {
   return setPlan({ autoSync: !!on });
 }
 
+/** 有声模式 / 静音模式：true = 进入单词卡与翻背时自动发音 */
+function toggleSound(on) {
+  return setPlan({ sound: !!on });
+}
+
+/** 当前是否为有声模式（读不到就按默认值，默认开） */
+function soundOn() {
+  const v = state.plan.sound;
+  return v === undefined ? !!config.DEFAULT_PLAN.sound : !!v;
+}
+
 /* ---------------- 多设备同步 ---------------- */
 
 function lastSync() {
@@ -345,7 +356,8 @@ function reset() {
 module.exports = {
   load, save, flush, get, today, day, status, stats, streak,
   markStudy, markSpell, nextLearnBatch, batchFrom, nextSpellBatch,
-  setPlan, setPerRound, toggleExpand, toggleAutoSync, perRound, clampPlan,
+  setPlan, setPerRound, toggleExpand, toggleAutoSync, toggleSound, soundOn,
+  perRound, clampPlan,
   sync, scheduleSync, lastSync,
   push, pull, reset, MASTER_LV
 };
