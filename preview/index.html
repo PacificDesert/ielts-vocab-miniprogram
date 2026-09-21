@@ -192,6 +192,25 @@ body.dark .side h1{color:#fff}
 @keyframes turnOutPrev{0%{transform:perspective(1600px) rotateY(0);opacity:1}60%{opacity:.5}100%{transform:perspective(1600px) rotateY(78deg);opacity:.06}}
 @keyframes turnInPrev{0%{transform:perspective(1600px) rotateY(-26deg);opacity:.2}100%{transform:perspective(1600px) rotateY(0);opacity:1}}
 
+/* 单词意思匹配 */
+.mgrid{display:flex;gap:10px;padding:8px 14px 0}
+.mcol{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.mtile{
+  min-height:54px;padding:12px 9px;border-radius:11px;background:var(--card);
+  display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;
+}
+.mtile:active{opacity:.7}
+.mtile-t{font-size:13px;line-height:1.45;color:var(--text);word-break:break-word}
+.mtile-t.en{font-size:16px;font-weight:500;font-family:"SF Mono",Menlo,Consolas,monospace}
+.mtile.picked{box-shadow:inset 0 0 0 2px var(--blue);background:var(--blue-soft)}
+.mtile.picked .mtile-t{color:var(--blue)}
+.mtile.ok{background:var(--green)}
+.mtile.ok .mtile-t{color:#fff}
+.mtile.bad{background:var(--red);animation:shake .5s ease-in-out}
+.mtile.bad .mtile-t{color:#fff}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}45%{transform:translateX(6px)}70%{transform:translateX(-4px)}}
+.mtip{padding:16px 18px 0;text-align:center;font-size:12px;color:var(--text3)}
+
 /* 单词切换翻页条 */
 .pager{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 24px}
 .pager-btn{font-size:14px;color:var(--blue);padding:8px 6px;cursor:pointer}
@@ -255,6 +274,7 @@ body.dark .side h1{color:#fff}
       <li><b>认识</b> 一下会跳到「单词拓展」页：例句 + 词形拓展 + 相近单词</li>
       <li>拓展页点相近词可以一直联想，每行右侧圆钮单独读该词读音</li>
       <li>拓展页底部 <b>下一个单词</b> 会跳回「记忆单词」的大卡片继续背</li>
+      <li>一组背完有 <b>单词意思匹配</b>：左边英文、右边中文，点一对算一次，每屏 4 对，配错抖一下可重选</li>
       <li>「我的」→ <b>外观</b> 可切「跟随系统 / 浅色 / 深色」，整机界面跟着变</li>
       <li>「我的」里 <b>每组单词数</b> 可自己输入，<b>最少 1、不设上限</b>（最多按词库 3328 词）</li>
       <li>嫌拓展页打扰？「我的」里关掉「认识后看拓展」即可</li>
@@ -437,11 +457,11 @@ const TABS = [
 ];
 
 let cur = { tab: 'learn', screen: 'learn', chapter: '', keyword: '', back: null };
-let study = null, spell = null;
+let study = null, spell = null, match = null;
 
 function renderTabs() {
   $('tabbar').innerHTML = TABS.map(t => {
-    const on = (t.id === 'learn' && (cur.screen === 'learn' || cur.screen === 'study'))
+    const on = (t.id === 'learn' && (cur.screen === 'learn' || cur.screen === 'study' || cur.screen === 'match'))
       || (t.id === 'vocab' && (cur.screen === 'vocab' || cur.screen === 'detail' || cur.screen === 'expand'))
       || (t.id === 'me' && (cur.screen === 'me' || cur.screen === 'privacy'))
       || (t.id === cur.screen);
@@ -471,7 +491,7 @@ function render() {
   applyTheme();
   const s = $('screen');
   const nav = $('navTitle');
-  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', expand: '单词拓展', study: '记忆单词', spell: '拼写自测', me: '我的', privacy: '用户协议与隐私政策' };
+  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', expand: '单词拓展', study: '记忆单词', spell: '拼写自测', me: '我的', privacy: '用户协议与隐私政策', match: '意思匹配' };
   nav.textContent = titles[cur.screen] || '雅思词汇';
   let backBtn = $('nav').querySelector('.back');
   if (backBtn) backBtn.remove();
@@ -482,7 +502,7 @@ function render() {
     b.onclick = () => show(cur.back);
     $('nav').prepend(b);
   }
-  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, expand: vExpand, study: vStudy, spell: vSpell, me: vMe, privacy: vPrivacy }[cur.screen])();
+  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, expand: vExpand, study: vStudy, spell: vSpell, me: vMe, privacy: vPrivacy, match: vMatch }[cur.screen])();
   bind(s);
   renderTabs();
   s.scrollTop = 0;
@@ -712,6 +732,8 @@ function vStudy() {
       + '<div style="height:40px"></div>'
       + '<button class="btn btn-primary btn-block" data-act="again">再来一组</button>'
       + '<div style="height:10px"></div>'
+      + '<button class="btn btn-ghost btn-block" data-act="match">单词意思匹配</button>'
+      + '<div style="height:10px"></div>'
       + '<button class="btn btn-plain btn-block" data-act="tospell">去拼写自测</button>'
       + '<div style="height:10px"></div>'
       + '<button class="btn btn-plain btn-block" data-act="home">返回首页</button></div>';
@@ -781,6 +803,105 @@ function mask(w, reveal) {
     if (/[a-zA-Z]/.test(ch)) { const o = i < reveal ? ch : '_'; i++; return o; }
     return ch;
   }).join(' ');
+}
+
+/* ---------- 单词意思匹配 ---------- */
+function shuffleArr(a) {
+  const out = a.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = out[i]; out[i] = out[j]; out[j] = t;
+  }
+  return out;
+}
+function chunkArr(list, size) {
+  const out = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  const last = out[out.length - 1];
+  if (out.length > 1 && last && last.length < 2) { out.pop(); out[out.length - 1] = out[out.length - 1].concat(last); }
+  return out;
+}
+function fillRound(m) {
+  const words = m.rounds[m.ri] || [];
+  m.left = shuffleArr(words.map((it, i) => ({ k: 'L' + i, t: it.w, w: it.w, st: '' })));
+  m.right = shuffleArr(words.map((it, i) => ({ k: 'R' + i, t: it.cn, w: it.w, st: '' })));
+  m.pickL = -1; m.pickR = -1;
+}
+function buildMatch(batch) {
+  const rounds = chunkArr((batch || []).filter(it => it && it.w && it.cn), 4);
+  const m = {
+    rounds: rounds, ri: 0, left: [], right: [], pickL: -1, pickR: -1,
+    total: rounds.reduce((n, r) => n + r.length, 0),
+    doneCount: 0, ok: 0, no: 0, done: false, acc: 0
+  };
+  fillRound(m);
+  return m;
+}
+function startMatch() {
+  let batch = (cur.lastBatch || []).filter(w => w && w.cn);
+  if (batch.length < 2) batch = nextLearn(S.plan);
+  batch = batch.filter(w => w && w.cn);
+  if (batch.length < 2) { toast('还没有可练习的单词'); return go('learn'); }
+  match = buildMatch(batch);
+  return show('match', 'study');
+}
+function judgeMatch() {
+  const m = match;
+  if (!m) return;
+  if (m.pickL < 0 || m.pickR < 0) return render();
+  const hit = m.left[m.pickL].w === m.right[m.pickR].w;
+  m.left[m.pickL].st = hit ? 'ok' : 'bad';
+  m.right[m.pickR].st = hit ? 'ok' : 'bad';
+  m.pickL = -1; m.pickR = -1;
+  if (hit) { m.ok++; m.doneCount++; } else { m.no++; }
+  render();
+  if (!hit) {
+    setTimeout(() => {
+      if (match !== m) return;
+      m.left.forEach(t => { if (t.st === 'bad') t.st = ''; });
+      m.right.forEach(t => { if (t.st === 'bad') t.st = ''; });
+      if (cur.screen === 'match') render();
+    }, 520);
+    return;
+  }
+  if (m.left.every(t => t.st === 'ok')) {
+    setTimeout(() => {
+      if (match !== m) return;
+      if (m.ri + 1 >= m.rounds.length) {
+        m.done = true;
+        m.acc = (m.ok + m.no) ? Math.round(m.ok * 100 / (m.ok + m.no)) : 0;
+        return render();
+      }
+      turnTo('next', () => { m.ri += 1; fillRound(m); });
+    }, 420);
+  }
+}
+function vMatch() {
+  if (!match) return '';
+  const m = match;
+  if (m.done) {
+    return '<div class="finish"><h3>本轮完成</h3>'
+      + '<div class="hero-row"><div><div class="big ok">' + m.ok + '</div><div class="hero-label">配对正确</div></div>'
+      + '<div><div class="big no">' + m.no + '</div><div class="hero-label">配对错误</div></div></div>'
+      + '<div class="hero-label" style="margin-top:8px">正确率 ' + m.acc + '%</div>'
+      + '<div style="height:40px"></div>'
+      + '<button class="btn btn-primary btn-block" data-act="magain">再来一轮</button>'
+      + '<div style="height:10px"></div>'
+      + '<button class="btn btn-ghost btn-block" data-act="mback">继续背单词</button>'
+      + '<div style="height:10px"></div>'
+      + '<button class="btn btn-plain btn-block" data-act="home">返回首页</button></div>';
+  }
+  return '<div class="bar-head"><div class="bar"><i style="width:' + (m.doneCount / m.total * 100) + '%"></i></div>'
+    + '<div class="bar-txt">第 ' + (m.ri + 1) + ' / ' + m.rounds.length + ' 组 · 已配对 ' + m.doneCount + ' / ' + m.total + '</div></div>'
+    + '<div class="turn-wrap ' + turn + '"><div class="mgrid">'
+    + '<div class="mcol">' + m.left.map((t, i) =>
+        '<div class="mtile ' + t.st + (m.pickL === i ? ' picked' : '') + '" data-act="mpick" data-side="l" data-i="' + i + '">'
+        + '<span class="mtile-t en">' + esc(t.t) + '</span></div>').join('') + '</div>'
+    + '<div class="mcol">' + m.right.map((t, i) =>
+        '<div class="mtile ' + t.st + (m.pickR === i ? ' picked' : '') + '" data-act="mpick" data-side="r" data-i="' + i + '">'
+        + '<span class="mtile-t">' + esc(t.t) + '</span></div>').join('') + '</div>'
+    + '</div></div>'
+    + '<div class="mtip">先点左边的英文单词，再点右边它的中文意思</div>';
 }
 
 function vMe() {
@@ -899,21 +1020,48 @@ function bind(s) {
 function act(a, el) {
   el = el || {};
   const w = cur.word;
-  if (a === 'learn') { cur.startIdx = -1; study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false }; if (!study.list.length) { toast('没有可学的单词'); return; } return show('study', 'learn'); }
+  if (a === 'learn') {
+    cur.startIdx = -1;
+    study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false };
+    if (!study.list.length) { toast('没有可学的单词'); return; }
+    cur.lastBatch = study.list;
+    return show('study', 'learn');
+  }
   if (a === 'again') {
     if (cur.screen === 'study') {
       const i = cur.startIdx;
       study = { list: (i >= 0 ? nextLearnFrom(i) : nextLearn(S.plan)), idx: 0, show: false, right: 0, wrong: 0, done: false };
+      cur.lastBatch = study.list;
       return render();
     }
     return startSpell();
   }
-  if (a === 'home') { study = null; spell = null; return go('learn'); }
+  if (a === 'home') { study = null; spell = null; match = null; return go('learn'); }
   if (a === 'tospell' || a === 'tolearn') {
     if (a === 'tospell') return go('spell');
     cur.startIdx = -1;
     study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false };
+    cur.lastBatch = study.list;
     return show('study', 'learn');
+  }
+  if (a === 'match') return startMatch();
+  if (a === 'magain') {
+    let batch = (cur.lastBatch || []).filter(w => w && w.cn);
+    if (batch.length < 2) batch = nextLearn(S.plan).filter(w => w && w.cn);
+    if (batch.length < 2) return go('learn');
+    match = buildMatch(batch);
+    return render();
+  }
+  if (a === 'mback') { match = null; return go('learn'); }
+  if (a === 'mpick') {
+    if (!match) return;
+    const side = el.dataset.side;
+    const i = Number(el.dataset.i);
+    const list = side === 'l' ? match.left : match.right;
+    if (!list[i] || list[i].st === 'ok') return;
+    if (side === 'l') match.pickL = match.pickL === i ? -1 : i;
+    else match.pickR = match.pickR === i ? -1 : i;
+    return judgeMatch();
   }
   if (a === 'flip') { study.show = !study.show; return render(); }
   if (a === 'known' || a === 'unknown') {
