@@ -39,8 +39,8 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   margin:0;padding:24px;background:#DFE3E8;
-  /* 全局黑体字型：macOS/iOS 用苹方，Windows 优先经典黑体 SimHei，再退微软雅黑/思源黑体 */
-  font-family:"PingFang SC","SimHei","Microsoft YaHei","Source Han Sans SC","Noto Sans CJK SC",sans-serif;
+  /* 苹方优先，非 Apple 平台退回系统黑体 */
+  font-family:"PingFang SC",-apple-system,"Helvetica Neue","Microsoft YaHei","Source Han Sans SC",sans-serif;
   display:flex;justify-content:center;align-items:flex-start;gap:28px;min-height:100vh;
 }
 body.dark{background:#0B0C0E}
@@ -645,8 +645,9 @@ function rgbaStr(r, a) { return 'rgba(' + r[0] + ',' + r[1] + ',' + r[2] + ',' +
 function cardStyle(ch) {
   const accent = hexRgb(CHAPTER_INK[ch] || '#3E4F60');
   const base = (CHAPTER_TINT[ch] || '238,242,245').split(',').map(Number);
+  const dark = isDark();
   let tint, ink, alphas;
-  if (isDark()) {
+  if (dark) {
     tint = mixTo(accent, 20, 0.86);
     // 深色下把章节色大幅提亮（接近白），保证标签文字和背景拉得开
     ink = mixTo(accent, 255, 0.68);
@@ -660,7 +661,12 @@ function cardStyle(ch) {
     tint: rgbStr(tint),
     ink: rgbStr(ink),
     veil: 'linear-gradient(180deg, ' + rgbaStr(tint, alphas[0]) + ' 0%, '
-      + rgbaStr(tint, alphas[1]) + ' 46%, ' + rgbaStr(tint, alphas[2]) + ' 100%)'
+      + rgbaStr(tint, alphas[1]) + ' 46%, ' + rgbaStr(tint, alphas[2]) + ' 100%)',
+    /* 卡面正文色：卡面按章节色调（深色下偏暗），直接用主题 --text 会发灰、看不清，
+       所以按主题给高对比的正文 / 次级色；音标用章节强调色 */
+    fg: dark ? '#FFFFFF' : '#1C1C1E',
+    fg2: dark ? 'rgba(255, 255, 255, 0.80)' : 'rgba(60, 60, 67, 0.62)',
+    ph: rgbStr(ink)
   };
 }
 function cardHtml(w) {
@@ -779,16 +785,16 @@ function vStudy() {
     + '<div class="flip-box' + (study.show ? ' flip-on' : '') + '">'
     + '<div class="flip-face">'
     + '<div class="stage-mono" style="color:' + cs.ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>'
-    + '<div class="stage-word">' + esc(w.w) + '</div>'
-    + (w.ph ? '<div class="stage-ph">' + esc(w.ph) + '</div>' : '')
-    + '<div class="stage-hint">轻触卡片查看释义</div>'
+    + '<div class="stage-word" style="color:' + cs.fg + '">' + esc(w.w) + '</div>'
+    + (w.ph ? '<div class="stage-ph" style="color:' + cs.ph + '">' + esc(w.ph) + '</div>' : '')
+    + '<div class="stage-hint" style="color:' + cs.fg2 + '">轻触卡片查看释义</div>'
     + '</div>'
     + '<div class="flip-face flip-back">'
-    + '<div class="stage-word">' + esc(w.w) + '</div>'
+    + '<div class="stage-word" style="color:' + cs.fg + '">' + esc(w.w) + '</div>'
     + '<div class="stage-line"></div>'
-    + '<div class="stage-cn">' + esc(w.cn) + '</div>'
-    + (w.ex ? '<div class="stage-ex">' + esc(w.ex[0]) + '</div>' : '')
-    + '<div class="stage-ch">' + esc(w.ch) + '</div>'
+    + '<div class="stage-cn" style="color:' + cs.fg + '">' + esc(w.cn) + '</div>'
+    + (w.ex ? '<div class="stage-ex" style="color:' + cs.fg2 + '">' + esc(w.ex[0]) + '</div>' : '')
+    + '<div class="stage-ch" style="color:' + cs.fg2 + '">' + esc(w.ch) + '</div>'
     + '</div></div>'
     + '</div></div></div>'
     + '<div class="actions">'
@@ -821,9 +827,9 @@ function vSpell() {
     + (art ? '<img class="spell-art" src="' + art + '" alt="" onerror="this.style.display=\'none\'">' : '')
     + '<div class="spell-veil" style="background:' + cs.veil + '"></div>'
     + (spell.checked ? '' : '<div class="spell-mono" style="color:' + cs.ink + '">' + esc(String(c.w).charAt(0).toUpperCase()) + '</div>')
-    + '<div class="quiz"><div class="quiz-cn">' + esc(c.cn) + '</div>'
-    + '<div class="quiz-mask">' + esc(mask(c.w, spell.reveal || 0)) + '</div>'
-    + (spell.checked && c.ph ? '<div class="quiz-ph">' + esc(c.ph) + '</div>' : '')
+    + '<div class="quiz"><div class="quiz-cn" style="color:' + cs.fg + '">' + esc(c.cn) + '</div>'
+    + '<div class="quiz-mask" style="color:' + cs.fg2 + '">' + esc(mask(c.w, spell.reveal || 0)) + '</div>'
+    + (spell.checked && c.ph ? '<div class="quiz-ph" style="color:' + cs.ph + '">' + esc(c.ph) + '</div>' : '')
     + (spell.checked ? (spell.ok ? '<div class="quiz-res ok pop">拼写正确</div>' : '<div class="quiz-res no shake">正确答案：' + esc(c.w) + '</div>') : '')
     + '</div>'
     + '</div>'

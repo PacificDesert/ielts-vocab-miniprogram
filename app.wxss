@@ -60,8 +60,8 @@ page, .t-light {
 page {
   background: var(--bg);
   color: var(--text);
-  /* 全局黑体字型：macOS/iOS 用苹方，Windows 优先经典黑体 SimHei，再退微软雅黑/思源黑体 */
-  font-family: "PingFang SC", "SimHei", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  /* 苹方优先，非 Apple 平台退回系统黑体 */
+  font-family: "PingFang SC", -apple-system, "Helvetica Neue", "Microsoft YaHei", "Source Han Sans SC", sans-serif;
   font-size: 32rpx;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;

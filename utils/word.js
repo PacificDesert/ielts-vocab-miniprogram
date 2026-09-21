@@ -126,7 +126,17 @@ function card(ch, w, dark) {
     ink: rgbStr(ink),
     tint: rgbStr(tint),
     veil,
-    mono: String(w || ' ').charAt(0).toUpperCase()
+    mono: String(w || ' ').charAt(0).toUpperCase(),
+    /**
+     * 卡片正文色：卡面按章节色调（深色下偏暗），直接用主题的 --text
+     * 在深色卡面上会发灰、看不清，所以这里按主题给一套高对比的正文与次级色。
+     * 浅色卡面偏白 → 正文用近黑、次级用 45% 灰；
+     * 深色卡面接近纯黑 → 正文用纯白、次级用 78% 白（比 --text2 更亮，压在插图上也清楚）。
+     */
+    fg: dark ? '#FFFFFF' : '#1C1C1E',
+    fg2: dark ? 'rgba(255, 255, 255, 0.80)' : 'rgba(60, 60, 67, 0.62)',
+    // 音标：直接用章节强调色，深浅两套都够亮、也不依赖主题变量
+    ph: rgbStr(ink)
   };
 }
 
