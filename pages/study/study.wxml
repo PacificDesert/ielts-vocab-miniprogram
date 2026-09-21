@@ -13,18 +13,22 @@
         <view class="stage-card">
           <image class="stage-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" />
           <view class="stage-veil" style="background:{{card.veil}}"></view>
-          <view class="stage-mono" style="color:{{card.ink}}" wx:if="{{!show}}">{{card.mono}}</view>
-          <view class="stage-inner">
-            <view class="stage-word">{{cur.w}}</view>
-            <view class="stage-ph" wx:if="{{cur.ph}}">{{cur.ph}}</view>
 
-            <block wx:if="{{show}}">
+          <!-- 轻触卡片：正面翻到背面，像翻一张单词卡 -->
+          <view class="flip-box {{show ? 'flip-on' : ''}}">
+            <view class="flip-face">
+              <view class="stage-mono" style="color:{{card.ink}}">{{card.mono}}</view>
+              <view class="stage-word">{{cur.w}}</view>
+              <view class="stage-ph" wx:if="{{cur.ph}}">{{cur.ph}}</view>
+              <view class="stage-hint">轻触卡片查看释义</view>
+            </view>
+            <view class="flip-face flip-back">
+              <view class="stage-word">{{cur.w}}</view>
               <view class="stage-line"></view>
               <view class="stage-cn">{{cur.cn}}</view>
               <view class="stage-ex" wx:if="{{cur.ex}}">{{cur.ex[0]}}</view>
               <view class="stage-ch">{{cur.ch}}</view>
-            </block>
-            <view class="stage-hint" wx:else>轻触卡片查看释义</view>
+            </view>
           </view>
         </view>
       </view>

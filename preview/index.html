@@ -19,7 +19,7 @@
 .phone[data-theme="dark"]{
   --bg:#000; --card:#1C1C1E; --fill:#2C2C2E; --fill-2:#2C2C2E;
   --cell-hover:#2C2C2E;
-  --text:#fff; --text2:#E5E5EA; --text3:#AEAEB2;
+  --text:#fff; --text2:#EBEBF0; --text3:#C7C7CC;
   --line:#38383A; --blue:#0A84FF; --blue-soft:rgba(10,132,255,.18);
   --green:#30D158; --red:#FF453A; --orange:#FF9F0A;
   --nav-bg:rgba(28,28,30,.94); --tab-bg:rgba(28,28,30,.94);
@@ -29,7 +29,7 @@
   .phone[data-theme="auto"]{
     --bg:#000; --card:#1C1C1E; --fill:#2C2C2E; --fill-2:#2C2C2E;
     --cell-hover:#2C2C2E;
-    --text:#fff; --text2:#E5E5EA; --text3:#AEAEB2;
+    --text:#fff; --text2:#EBEBF0; --text3:#C7C7CC;
     --line:#38383A; --blue:#0A84FF; --blue-soft:rgba(10,132,255,.18);
     --green:#30D158; --red:#FF453A; --orange:#FF9F0A;
     --nav-bg:rgba(28,28,30,.94); --tab-bg:rgba(28,28,30,.94);
@@ -136,6 +136,15 @@ body.dark .side h1{color:#fff}
 }
 .stage-word{font-size:36px;font-weight:700;letter-spacing:-.6px;word-break:break-word}
 .stage-ph{font-size:15px;color:var(--text2);margin-top:8px}
+/* 记忆卡翻面：正面单词、背面释义，绕 Y 轴转 180° */
+.flip-box{position:relative;width:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.42,0,.28,1)}
+.flip-box.flip-on{transform:rotateY(180deg)}
+.flip-face{
+  position:relative;min-height:230px;padding:30px 20px;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.flip-back{position:absolute;left:0;top:0;right:0;transform:rotateY(180deg)}
 .stage-line{width:44px;height:2px;background:var(--line);margin:22px 0}
 .stage-cn{font-size:18px;line-height:1.55}
 .stage-ch{font-size:12px;color:var(--text2);margin-top:14px}
@@ -621,7 +630,8 @@ function cardStyle(ch) {
   let tint, ink, alphas;
   if (isDark()) {
     tint = mixTo(accent, 20, 0.86);
-    ink = mixTo(accent, 255, 0.55);
+    // 深色下把章节色大幅提亮（接近白），保证标签文字和背景拉得开
+    ink = mixTo(accent, 255, 0.68);
     alphas = [0.34, 0.72, 0.97];
   } else {
     tint = base;
@@ -748,16 +758,21 @@ function vStudy() {
     + '<div class="stage-card" data-act="flip" style="position:relative;overflow:hidden">'
     + (art ? '<img class="stage-art" src="' + art + '" alt="" onerror="this.style.display=\'none\'">' : '')
     + '<div class="stage-veil" style="background:' + cs.veil + '"></div>'
-    + (study.show ? '' : '<div class="stage-mono" style="color:' + cs.ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>')
-    + '<div style="position:relative;width:100%;display:flex;flex-direction:column;align-items:center">'
+    + '<div class="flip-box' + (study.show ? ' flip-on' : '') + '">'
+    + '<div class="flip-face">'
+    + '<div class="stage-mono" style="color:' + cs.ink + '">' + esc(String(w.w).charAt(0).toUpperCase()) + '</div>'
     + '<div class="stage-word">' + esc(w.w) + '</div>'
     + (w.ph ? '<div class="stage-ph">' + esc(w.ph) + '</div>' : '')
-    + (study.show
-      ? '<div class="stage-line"></div><div class="stage-cn">' + esc(w.cn) + '</div>'
-        + (w.ex ? '<div class="stage-ex">' + esc(w.ex[0]) + '</div>' : '')
-        + '<div class="stage-ch">' + esc(w.ch) + '</div>'
-      : '<div class="stage-hint">轻触卡片查看释义</div>')
-    + '</div></div></div></div>'
+    + '<div class="stage-hint">轻触卡片查看释义</div>'
+    + '</div>'
+    + '<div class="flip-face flip-back">'
+    + '<div class="stage-word">' + esc(w.w) + '</div>'
+    + '<div class="stage-line"></div>'
+    + '<div class="stage-cn">' + esc(w.cn) + '</div>'
+    + (w.ex ? '<div class="stage-ex">' + esc(w.ex[0]) + '</div>' : '')
+    + '<div class="stage-ch">' + esc(w.ch) + '</div>'
+    + '</div></div>'
+    + '</div></div></div>'
     + '<div class="actions">'
     + '<button class="btn btn-plain" data-act="unknown">不认识</button>'
     + '<button class="btn btn-primary" data-act="known">认识</button>'

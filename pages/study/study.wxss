@@ -33,14 +33,29 @@
   line-height: 1;
   opacity: 0.12;
 }
-.stage-inner {
+/* 记忆卡翻面：正面单词、背面释义，绕 Y 轴转 180° */
+.flip-box {
   position: relative;
   width: 100%;
-  padding: 80rpx 40rpx;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.42, 0, 0.28, 1);
+}
+.flip-box.flip-on { transform: rotateY(180deg); }
+.flip-face {
+  position: relative;
+  min-height: 500rpx;
+  padding: 60rpx 40rpx;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+.flip-back {
+  position: absolute;
+  left: 0; top: 0; right: 0;
+  transform: rotateY(180deg);
 }
 .stage-word {
   font-size: 76rpx;

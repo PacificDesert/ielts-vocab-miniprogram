@@ -63,7 +63,7 @@ function applyNative() {
     });
   }
   wx.setTabBarStyle({
-    color: dark ? '#98989F' : '#8E8E93',
+    color: dark ? '#D1D1D6' : '#8E8E93',
     selectedColor: dark ? '#0A84FF' : '#007AFF',
     backgroundColor: dark ? '#1C1C1E' : '#FFFFFF',
     borderStyle: dark ? 'white' : 'black'

@@ -111,7 +111,8 @@ function card(ch, w, dark) {
   let tint, ink, veil;
   if (dark) {
     tint = mixTo(accent, 20, 0.86);
-    ink = mixTo(accent, 255, 0.55);
+    // 深色下把章节色大幅提亮（接近白），保证标签文字和背景拉得开
+    ink = mixTo(accent, 255, 0.68);
     veil = 'linear-gradient(180deg, ' + rgbaStr(tint, 0.34) + ' 0%, '
       + rgbaStr(tint, 0.72) + ' 46%, ' + rgbaStr(tint, 0.97) + ' 100%)';
   } else {
