@@ -1,4 +1,5 @@
 const store = require('../../utils/store');
+const word = require('../../utils/word');
 const flip = require('../../utils/flip');
 
 function buildMask(text, reveal) {
@@ -18,6 +19,7 @@ Page(flip.mixin({
     list: [],
     idx: 0,
     cur: {},
+    card: {},
     input: '',
     mask: '',
     reveal: 0,
@@ -44,6 +46,9 @@ Page(flip.mixin({
 
   syncTheme() {
     this.setData(getApp().themeData());
+    // 主题切换时词卡配色（章节图遮罩、水印颜色）要跟着重算
+    const cur = this.data.list[this.data.idx];
+    if (cur && cur.w) this.setData({ card: word.card(cur.ch, cur.w, getApp().themeData().dark) });
   },
 
   again() {
@@ -61,6 +66,7 @@ Page(flip.mixin({
     const cur = this.data.list[this.data.idx] || {};
     this.setData({
       cur,
+      card: cur.w ? word.card(cur.ch, cur.w, this.data.dark) : {},
       input: '',
       checked: false,
       ok: false,

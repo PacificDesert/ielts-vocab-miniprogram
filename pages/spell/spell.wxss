@@ -2,19 +2,67 @@
 .bar-head { padding: 0 32rpx 24rpx; }
 .bar-text { margin-top: 12rpx; font-size: 24rpx; color: var(--text2); text-align: center; }
 
-.quiz { padding: 40rpx 48rpx 24rpx; text-align: center; }
+/* 题目卡：与记忆卡同款，章节配图 + 渐变遮罩 + 首字母水印 */
+.stage { padding: 0 24rpx; }
+.stage-card {
+  position: relative;
+  background: var(--card);
+  border-radius: 32rpx;
+  min-height: 560rpx;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.stage-art {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+.stage-veil {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+}
+.stage-mono {
+  position: absolute;
+  right: -20rpx;
+  bottom: -100rpx;
+  font-size: 380rpx;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.12;
+}
+
+.quiz { position: relative; padding: 100rpx 48rpx 90rpx; text-align: center; }
 .quiz-cn { font-size: 40rpx; line-height: 1.5; }
 .quiz-mask {
   margin-top: 48rpx;
   font-size: 40rpx;
   letter-spacing: 2rpx;
-  color: var(--text3);
+  color: var(--text2);
   word-break: break-word;
 }
 .quiz-ph { margin-top: 20rpx; font-size: 28rpx; color: var(--text2); }
 .quiz-result { margin-top: 40rpx; font-size: 32rpx; font-weight: 500; }
 .quiz-result.ok { color: var(--green); }
 .quiz-result.no { color: var(--red); }
+
+/* 判定结果的进场动画：正确弹入，错误左右抖一下 */
+.pop { animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.shake { animation: shakeX 0.4s ease-in-out both; }
+@keyframes popIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-14rpx); }
+  40% { transform: translateX(14rpx); }
+  60% { transform: translateX(-9rpx); }
+  80% { transform: translateX(9rpx); }
+}
 
 .input-wrap { padding: 32rpx 24rpx 0; }
 .input {

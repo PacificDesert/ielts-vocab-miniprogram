@@ -9,18 +9,26 @@
     </view>
 
     <view class="turn-wrap {{turn}}">
-      <view class="quiz">
-        <view class="quiz-cn">{{cur.cn}}</view>
-        <view class="quiz-mask mono">{{mask}}</view>
-        <view class="quiz-ph" wx:if="{{checked && cur.ph}}">{{cur.ph}}</view>
+      <view class="stage">
+        <view class="stage-card">
+          <image class="stage-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" />
+          <view class="stage-veil" style="background:{{card.veil}}"></view>
+          <view class="stage-mono" style="color:{{card.ink}}" wx:if="{{!checked}}">{{card.mono}}</view>
 
-        <view class="quiz-result ok" wx:if="{{checked && ok}}">拼写正确</view>
-        <view class="quiz-result no" wx:if="{{checked && !ok}}">正确答案：{{cur.w}}</view>
+          <view class="quiz">
+            <view class="quiz-cn">{{cur.cn}}</view>
+            <view class="quiz-mask mono">{{mask}}</view>
+            <view class="quiz-ph" wx:if="{{checked && cur.ph}}">{{cur.ph}}</view>
+
+            <view class="quiz-result {{ok ? 'ok pop' : 'no shake'}}" wx:if="{{checked && ok}}">拼写正确</view>
+            <view class="quiz-result {{ok ? 'ok pop' : 'no shake'}}" wx:if="{{checked && !ok}}">正确答案：{{cur.w}}</view>
+          </view>
+        </view>
       </view>
 
       <view class="input-wrap">
         <input
-          class="input mono"
+          class="input"
           value="{{input}}"
           placeholder="输入英文单词"
           placeholder-class="input-ph"

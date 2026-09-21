@@ -39,7 +39,8 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   margin:0;padding:24px;background:#DFE3E8;
-  font-family:-apple-system,"SF Pro Text","Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;
+  /* 全局黑体字型：macOS/iOS 用苹方，Windows 优先经典黑体 SimHei，再退微软雅黑/思源黑体 */
+  font-family:"PingFang SC","SimHei","Microsoft YaHei","Source Han Sans SC","Noto Sans CJK SC",sans-serif;
   display:flex;justify-content:center;align-items:flex-start;gap:28px;min-height:100vh;
 }
 body.dark{background:#0B0C0E}
@@ -153,15 +154,25 @@ body.dark .side h1{color:#fff}
 .stage-ch{font-size:12px;color:var(--text2);margin-top:14px}
 .stage-hint{font-size:13px;color:var(--text3);margin-top:26px}
 .actions{display:flex;gap:12px;padding:18px 18px 0}
-.quiz{padding:26px 24px 10px;text-align:center}
+/* 拼写页题目卡：与记忆卡同款（章节配图 + 渐变遮罩 + 首字母水印） */
+.spell-stage{position:relative;margin:0 10px;background:var(--card);border-radius:16px;overflow:hidden;min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.spell-art{position:absolute;left:0;top:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover}
+.spell-veil{position:absolute;left:0;top:0;right:0;bottom:0}
+.spell-mono{position:absolute;right:-10px;bottom:-46px;font-size:150px;font-weight:700;line-height:1;opacity:.12}
+.quiz{position:relative;padding:44px 24px 40px;text-align:center}
 .quiz-cn{font-size:20px;line-height:1.5}
-.quiz-mask{font-size:20px;color:var(--text3);margin-top:26px;letter-spacing:3px;word-break:break-word;font-family:"SF Mono",Menlo,Consolas,monospace}
+.quiz-mask{font-size:20px;color:var(--text2);margin-top:26px;letter-spacing:3px;word-break:break-word}
 .quiz-ph{font-size:14px;color:var(--text2);margin-top:10px}
 .quiz-res{font-size:16px;font-weight:500;margin-top:20px}
+/* 判定结果的进场动画：正确弹入，错误左右抖一下 */
+.pop{animation:popIn .35s cubic-bezier(.34,1.56,.64,1) both}
+.shake{animation:shakeX .4s ease-in-out both}
+@keyframes popIn{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 .ok{color:var(--green)} .no{color:var(--red)}
 .input{
   margin:18px 18px 0;height:52px;background:var(--card);border-radius:12px;border:none;outline:none;
-  width:calc(100% - 36px);text-align:center;font-size:18px;font-family:"SF Mono",Menlo,Consolas,monospace;color:var(--text);
+  width:calc(100% - 36px);text-align:center;font-size:18px;color:var(--text);
 }
 .bar-head{padding:14px 18px 6px}
 .bar-head .bar{margin:0 0 6px}
@@ -213,7 +224,7 @@ body.dark .side h1{color:#fff}
 }
 .mtile:active{opacity:.7}
 .mtile-t{font-size:13px;line-height:1.45;color:var(--text);word-break:break-word}
-.mtile-t.en{font-size:16px;font-weight:500;font-family:"SF Mono",Menlo,Consolas,monospace}
+.mtile-t.en{font-size:16px;font-weight:500}
 .mtile.picked{box-shadow:inset 0 0 0 2px var(--blue);background:var(--blue-soft)}
 .mtile.picked .mtile-t{color:var(--blue)}
 .mtile.ok{background:var(--green)}
@@ -801,13 +812,20 @@ function vSpell() {
       + '<button class="btn btn-plain btn-block" data-act="home">返回首页</button></div>';
   }
   const c = spell.list[spell.idx];
+  const cs = cardStyle(c.ch);
+  const art = themeImg(c.ch);
   return '<div class="bar-head"><div class="bar"><i style="width:' + (spell.idx / spell.list.length * 100) + '%"></i></div>'
     + '<div class="bar-txt">' + (spell.idx + 1) + ' / ' + spell.list.length + ' · 正确 ' + spell.right + '</div></div>'
     + '<div class="turn-wrap ' + turn + '">'
+    + '<div class="spell-stage">'
+    + (art ? '<img class="spell-art" src="' + art + '" alt="" onerror="this.style.display=\'none\'">' : '')
+    + '<div class="spell-veil" style="background:' + cs.veil + '"></div>'
+    + (spell.checked ? '' : '<div class="spell-mono" style="color:' + cs.ink + '">' + esc(String(c.w).charAt(0).toUpperCase()) + '</div>')
     + '<div class="quiz"><div class="quiz-cn">' + esc(c.cn) + '</div>'
     + '<div class="quiz-mask">' + esc(mask(c.w, spell.reveal || 0)) + '</div>'
     + (spell.checked && c.ph ? '<div class="quiz-ph">' + esc(c.ph) + '</div>' : '')
-    + (spell.checked ? (spell.ok ? '<div class="quiz-res ok">拼写正确</div>' : '<div class="quiz-res no">正确答案：' + esc(c.w) + '</div>') : '')
+    + (spell.checked ? (spell.ok ? '<div class="quiz-res ok pop">拼写正确</div>' : '<div class="quiz-res no shake">正确答案：' + esc(c.w) + '</div>') : '')
+    + '</div>'
     + '</div>'
     + '<input class="input" id="ans" placeholder="输入英文单词" ' + (spell.checked ? 'disabled' : '') + ' value="' + esc(spell.input || '') + '">'
     + '</div>'

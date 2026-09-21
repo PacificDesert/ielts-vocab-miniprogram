@@ -60,13 +60,16 @@ page, .t-light {
 page {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  /* 全局黑体字型：macOS/iOS 用苹方，Windows 优先经典黑体 SimHei，再退微软雅黑/思源黑体 */
+  font-family: "PingFang SC", "SimHei", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
   font-size: 32rpx;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 
 view, text, input, textarea, button { box-sizing: border-box; }
+/* 原生组件有自己的 UA 字体，显式继承页面的黑体设置 */
+button, input, textarea { font-family: inherit; }
 
 /* 关键：文字颜色必须挂在带主题类的这一层。
    没有显式写 color 的文字（大单词、释义、标题、统计数字……）都从 page 继承，
@@ -238,4 +241,4 @@ view, text, input, textarea, button { box-sizing: border-box; }
   color: var(--text2);
 }
 .empty { padding: 120rpx 0; text-align: center; color: var(--text2); font-size: 28rpx; }
-.mono { font-family: "SF Mono", Menlo, Consolas, monospace; }
+.mono { letter-spacing: 2rpx; }

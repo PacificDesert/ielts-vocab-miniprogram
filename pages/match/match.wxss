@@ -19,7 +19,6 @@
 .mtile-t.en {
   font-size: 33rpx;
   font-weight: 500;
-  font-family: "SF Mono", Menlo, Consolas, monospace;
   word-break: break-word;
 }
 .mtile-hover { opacity: 0.7; }
