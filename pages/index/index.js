@@ -10,7 +10,12 @@ Page({
   },
 
   onShow() {
+    this.setData(getApp().themeData());
     this.refresh();
+  },
+
+  syncTheme() {
+    this.setData(getApp().themeData());
   },
 
   refresh() {

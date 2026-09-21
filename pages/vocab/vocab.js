@@ -15,7 +15,12 @@ Page({
     this.setData({ total: word.total });
   },
 
+  syncTheme() {
+    this.setData(getApp().themeData());
+  },
+
   onShow() {
+    this.setData(getApp().themeData());
     const app = getApp();
     if (app.globalData.pendingChapter) {
       const name = app.globalData.pendingChapter;
@@ -88,15 +93,5 @@ Page({
   onWordTap(e) {
     const w = e.currentTarget.dataset.w;
     wx.navigateTo({ url: `/pages/detail/detail?w=${encodeURIComponent(w)}` });
-  },
-
-  onWordLongPress(e) {
-    const w = e.currentTarget.dataset.w;
-    const it = word.get(w);
-    if (!it) return;
-    wx.setClipboardData({
-      data: word.copyText(it),
-      success: () => wx.showToast({ title: '已复制', icon: 'none' })
-    });
   }
 });

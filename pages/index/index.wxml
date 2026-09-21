@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page {{themeClass}}">
   <view class="h1">雅思词汇</view>
   <view class="h2">雅思词汇真经 · 共 {{stats.total}} 词</view>
 

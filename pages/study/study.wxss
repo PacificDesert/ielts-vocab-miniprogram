@@ -66,12 +66,6 @@
 .actions { display: flex; gap: 20rpx; padding: 40rpx 24rpx 0; }
 .actions .btn { flex: 1; }
 .gap { margin-top: 20rpx; }
-.copy-link {
-  text-align: center;
-  padding: 32rpx 0;
-  font-size: 26rpx;
-  color: var(--blue);
-}
 
 .finish { padding: 120rpx 40rpx 0; text-align: center; }
 .finish-title { font-size: 44rpx; font-weight: 600; margin-bottom: 60rpx; }

@@ -10,17 +10,17 @@
     "pages/privacy/privacy"
   ],
   "window": {
-    "backgroundTextStyle": "dark",
-    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundTextStyle": "@winTextStyle",
+    "navigationBarBackgroundColor": "@navBg",
     "navigationBarTitleText": "雅思词汇",
-    "navigationBarTextStyle": "black",
-    "backgroundColor": "#F2F2F7"
+    "navigationBarTextStyle": "@navFront",
+    "backgroundColor": "@winBg"
   },
   "tabBar": {
-    "color": "#8E8E93",
-    "selectedColor": "#007AFF",
-    "backgroundColor": "#FFFFFF",
-    "borderStyle": "black",
+    "color": "@tabColor",
+    "selectedColor": "@tabSelected",
+    "backgroundColor": "@tabBg",
+    "borderStyle": "@tabBorder",
     "list": [
       {
         "pagePath": "pages/index/index",
@@ -48,6 +48,8 @@
       }
     ]
   },
+  "darkmode": true,
+  "themeLocation": "theme.json",
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

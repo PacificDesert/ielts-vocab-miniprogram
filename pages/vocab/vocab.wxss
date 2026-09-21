@@ -4,7 +4,7 @@
   align-items: center;
   height: 76rpx;
   padding: 0 24rpx;
-  background: #E9E9ED;
+  background: var(--fill-2);
   border-radius: 20rpx;
 }
 .search-icon {

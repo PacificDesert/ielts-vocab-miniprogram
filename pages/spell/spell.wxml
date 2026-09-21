@@ -1,4 +1,4 @@
-<view class="page spell">
+<view class="page spell {{themeClass}}">
 
   <block wx:if="{{!done}}">
     <view class="bar-head">
@@ -8,26 +8,28 @@
       <view class="bar-text">{{idx + 1}} / {{list.length}} · 正确 {{right}}</view>
     </view>
 
-    <view class="quiz">
-      <view class="quiz-cn">{{cur.cn}}</view>
-      <view class="quiz-mask mono">{{mask}}</view>
-      <view class="quiz-ph" wx:if="{{checked && cur.ph}}">{{cur.ph}}</view>
+    <view class="turn-wrap {{turn}}">
+      <view class="quiz">
+        <view class="quiz-cn">{{cur.cn}}</view>
+        <view class="quiz-mask mono">{{mask}}</view>
+        <view class="quiz-ph" wx:if="{{checked && cur.ph}}">{{cur.ph}}</view>
 
-      <view class="quiz-result ok" wx:if="{{checked && ok}}">拼写正确</view>
-      <view class="quiz-result no" wx:if="{{checked && !ok}}">正确答案：{{cur.w}}</view>
-    </view>
+        <view class="quiz-result ok" wx:if="{{checked && ok}}">拼写正确</view>
+        <view class="quiz-result no" wx:if="{{checked && !ok}}">正确答案：{{cur.w}}</view>
+      </view>
 
-    <view class="input-wrap">
-      <input
-        class="input mono"
-        value="{{input}}"
-        placeholder="输入英文单词"
-        placeholder-class="input-ph"
-        confirm-type="done"
-        disabled="{{checked}}"
-        bindinput="onInput"
-        bindconfirm="submit"
-      />
+      <view class="input-wrap">
+        <input
+          class="input mono"
+          value="{{input}}"
+          placeholder="输入英文单词"
+          placeholder-class="input-ph"
+          confirm-type="done"
+          disabled="{{checked}}"
+          bindinput="onInput"
+          bindconfirm="submit"
+        />
+      </view>
     </view>
 
     <view class="actions">
@@ -36,7 +38,6 @@
       <view class="btn btn-primary" wx:if="{{!checked}}" hover-class="btn-hover" bindtap="submit">提交</view>
       <view class="btn btn-primary" wx:if="{{checked}}" hover-class="btn-hover" bindtap="next">下一题</view>
     </view>
-    <view class="copy-link" wx:if="{{checked}}" bindtap="copy">复制单词</view>
   </block>
 
   <block wx:else>

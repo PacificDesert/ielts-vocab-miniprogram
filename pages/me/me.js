@@ -2,8 +2,14 @@ const store = require('../../utils/store');
 const word = require('../../utils/word');
 const cloud = require('../../utils/cloud');
 const config = require('../../config');
+const theme = require('../../utils/theme');
 
 const PRESETS = [10, 20, 30, 50, 100, 200, 500];
+const THEMES = [
+  { value: 'auto', label: '跟随系统' },
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' }
+];
 
 Page({
   data: {
@@ -11,6 +17,8 @@ Page({
     plan: {},
     planInput: '20',
     presets: PRESETS,
+    themes: THEMES,
+    themeMode: 'auto',
     step: 5,
     min: config.PLAN_MIN,
     cloud: false,
@@ -20,7 +28,12 @@ Page({
   },
 
   onShow() {
+    this.setData(getApp().themeData());
     this.refresh();
+  },
+
+  syncTheme() {
+    this.setData(getApp().themeData());
   },
 
   refresh() {
@@ -82,6 +95,10 @@ Page({
   onToggleExpand(e) {
     store.toggleExpand(e.detail.value);
     this.refresh();
+  },
+
+  onThemeMode(e) {
+    theme.setMode(e.currentTarget.dataset.v);
   },
 
   onToggleAutoSync(e) {

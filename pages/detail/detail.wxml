@@ -1,53 +1,55 @@
-<view class="page detail">
-  <view class="wcard">
-    <image class="wcard-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" lazy-load="{{true}}" />
-    <view class="wcard-veil" style="background:{{card.veil}}"></view>
-    <view class="wcard-mono" style="color:{{card.ink}}">{{card.mono}}</view>
-    <view class="wcard-body">
-      <view class="wcard-tag" style="color:{{card.ink}};background:{{card.tint}}">{{ch}}</view>
-      <view class="wcard-word">{{w}}</view>
-      <view class="wcard-foot">
-        <text class="wcard-ph" wx:if="{{ph}}">{{ph}}</text>
-        <view class="wcard-speak" wx:if="{{canSpeak}}" hover-class="btn-hover" catchtap="play">
-          <view class="speak-icon"></view>
+<view class="page detail {{themeClass}}">
+
+  <view class="turn-wrap {{turn}}">
+    <view class="wcard">
+      <image class="wcard-art" src="{{card.img}}" mode="aspectFill" wx:if="{{card.img}}" lazy-load="{{true}}" />
+      <view class="wcard-veil" style="background:{{card.veil}}"></view>
+      <view class="wcard-mono" style="color:{{card.ink}}">{{card.mono}}</view>
+      <view class="wcard-body">
+        <view class="wcard-tag" style="color:{{card.ink}};background:{{card.tint}}">{{ch}}</view>
+        <view class="wcard-word">{{w}}</view>
+        <view class="wcard-foot">
+          <text class="wcard-ph" wx:if="{{ph}}">{{ph}}</text>
+          <view class="wcard-speak" wx:if="{{canSpeak}}" hover-class="btn-hover" catchtap="play">
+            <view class="speak-icon"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="group" style="margin-top:24rpx">
+      <view class="group-title">释义</view>
+      <view class="card cn-card">
+        <text class="cn">{{cn}}</text>
+        <view class="tags">
+          <text class="tag" wx:if="{{lv >= 3}}">已掌握</text>
+          <text class="tag" wx:elif="{{lv > 0}}">复习中</text>
+          <text class="tag" wx:else>未学习</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="group" wx:if="{{ex}}">
+      <view class="group-title">书中例句</view>
+      <view class="card ex-card">
+        <view class="ex-en">{{ex.en}}</view>
+        <view class="ex-zh" wx:if="{{ex.zh}}">{{ex.zh}}</view>
+      </view>
+    </view>
+
+    <view class="group" wx:if="{{dr.length}}">
+      <view class="group-title">词形拓展</view>
+      <view class="card">
+        <view class="cell" wx:for="{{dr}}" wx:key="0">
+          <view class="cell-main"><view class="cell-title">{{item[0]}}</view></view>
+          <view class="cell-value dr-cn">{{item[1]}}</view>
         </view>
       </view>
     </view>
   </view>
 
-  <view class="group" style="margin-top:24rpx">
-    <view class="group-title">释义</view>
-    <view class="card cn-card">
-      <text class="cn">{{cn}}</text>
-      <view class="tags">
-        <text class="tag" wx:if="{{lv >= 3}}">已掌握</text>
-        <text class="tag" wx:elif="{{lv > 0}}">复习中</text>
-        <text class="tag" wx:else>未学习</text>
-      </view>
-    </view>
-  </view>
-
-  <view class="group" wx:if="{{ex}}">
-    <view class="group-title">书中例句</view>
-    <view class="card ex-card">
-      <view class="ex-en">{{ex.en}}</view>
-      <view class="ex-zh" wx:if="{{ex.zh}}">{{ex.zh}}</view>
-    </view>
-  </view>
-
-  <view class="group" wx:if="{{dr.length}}">
-    <view class="group-title">词形拓展</view>
-    <view class="card">
-      <view class="cell" wx:for="{{dr}}" wx:key="0">
-        <view class="cell-main"><view class="cell-title">{{item[0]}}</view></view>
-        <view class="cell-value dr-cn">{{item[1]}}</view>
-      </view>
-    </view>
-  </view>
-
   <view class="group">
-    <view class="btn btn-primary btn-block" hover-class="btn-hover" bindtap="copy">一键复制</view>
-    <view class="btn-row gap">
+    <view class="btn-row">
       <view class="btn btn-plain" hover-class="btn-hover" bindtap="onExpand">相近词</view>
       <view class="btn btn-plain" hover-class="btn-hover" bindtap="markUnknown">不认识</view>
       <view class="btn btn-ghost" hover-class="btn-hover" bindtap="markKnown">认识</view>

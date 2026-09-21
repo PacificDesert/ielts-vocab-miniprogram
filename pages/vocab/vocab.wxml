@@ -1,6 +1,6 @@
-<view class="page">
+<view class="page {{themeClass}}">
   <view class="h1">词库</view>
-  <view class="h2">共 {{total}} 词，长按单词可一键复制</view>
+  <view class="h2">共 {{total}} 词 · 点击单词查看详情</view>
 
   <view class="search-wrap">
     <view class="search">
@@ -46,7 +46,6 @@
           wx:key="w"
           data-w="{{item.w}}"
           bindtap="onWordTap"
-          bindlongpress="onWordLongPress"
         >
           <view class="word-main">
             <view class="word-line">

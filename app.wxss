@@ -1,16 +1,61 @@
-/* iOS 简约风格基础样式 */
-page {
+/* iOS 简约风格基础样式 + 深浅色主题 */
+
+/* 浅色（默认）；深色跟随系统；手动切换时用 .t-light / .t-dark 覆盖 */
+page, .t-light {
   --bg: #F2F2F7;
   --card: #FFFFFF;
+  --fill: #EFEFF4;
+  --fill-2: #E9E9ED;
   --text: #1C1C1E;
   --text2: #8E8E93;
   --text3: #C7C7CC;
   --line: #E5E5EA;
   --blue: #007AFF;
+  --blue-soft: rgba(0, 122, 255, 0.1);
   --green: #34C759;
   --red: #FF3B30;
   --orange: #FF9500;
+  --mono-ink: rgba(28, 28, 30, 0.13);
+  --speak-bg: rgba(255, 255, 255, 0.86);
+}
 
+@media (prefers-color-scheme: dark) {
+  page {
+    --bg: #000000;
+    --card: #1C1C1E;
+    --fill: #2C2C2E;
+    --text: #FFFFFF;
+    --text2: #98989F;
+    --text3: #48484A;
+    --line: #38383A;
+    --blue: #0A84FF;
+    --blue-soft: rgba(10, 132, 255, 0.18);
+    --green: #30D158;
+    --red: #FF453A;
+    --orange: #FF9F0A;
+    --mono-ink: rgba(255, 255, 255, 0.14);
+    --speak-bg: rgba(44, 44, 46, 0.9);
+  }
+}
+
+.t-dark {
+  --bg: #000000;
+  --card: #1C1C1E;
+  --fill: #2C2C2E;
+  --text: #FFFFFF;
+  --text2: #98989F;
+  --text3: #48484A;
+  --line: #38383A;
+  --blue: #0A84FF;
+  --blue-soft: rgba(10, 132, 255, 0.18);
+  --green: #30D158;
+  --red: #FF453A;
+  --orange: #FF9F0A;
+  --mono-ink: rgba(255, 255, 255, 0.14);
+  --speak-bg: rgba(44, 44, 46, 0.9);
+}
+
+page {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -21,7 +66,11 @@ page {
 
 view, text, input, textarea, button { box-sizing: border-box; }
 
-.page { min-height: 100vh; padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+}
 
 /* 大标题 */
 .h1 {
@@ -89,8 +138,8 @@ view, text, input, textarea, button { box-sizing: border-box; }
   font-weight: 500;
 }
 .btn-primary { background: var(--blue); color: #fff; }
-.btn-plain { background: #EFEFF4; color: var(--text); }
-.btn-ghost { background: rgba(0, 122, 255, 0.1); color: var(--blue); }
+.btn-plain { background: var(--fill); color: var(--text); }
+.btn-ghost { background: var(--blue-soft); color: var(--blue); }
 .btn-block { width: 100%; }
 .btn-row { display: flex; gap: 20rpx; }
 .btn-row .btn { flex: 1; }
@@ -100,7 +149,7 @@ view, text, input, textarea, button { box-sizing: border-box; }
 .bar {
   height: 12rpx;
   border-radius: 6rpx;
-  background: #EFEFF4;
+  background: var(--fill);
   overflow: hidden;
 }
 .bar-fill {
@@ -110,13 +159,75 @@ view, text, input, textarea, button { box-sizing: border-box; }
   transition: width 0.3s;
 }
 
+/* 发音按钮（列表里的小圆钮） */
+.speak-btn {
+  width: 64rpx;
+  height: 64rpx;
+  margin-left: 16rpx;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.speak-btn .tri {
+  width: 0;
+  height: 0;
+  border-left: 20rpx solid var(--blue);
+  border-top: 13rpx solid transparent;
+  border-bottom: 13rpx solid transparent;
+  margin-left: 5rpx;
+}
+
+/* 翻书动画：换词时把「书页」从装订边翻过去，再翻下一页回来
+   用法：<view class="turn-wrap {{turn}}">...</view>
+   turn 取 turn-out-next / turn-in-next / turn-out-prev / turn-in-prev */
+.turn-wrap { position: relative; }
+
+.turn-out-next {
+  transform-origin: left center;
+  animation: turnOutNext 0.2s ease-in both;
+}
+.turn-in-next {
+  transform-origin: left center;
+  animation: turnInNext 0.4s cubic-bezier(0.22, 0.68, 0.24, 1) backwards;
+}
+.turn-out-prev {
+  transform-origin: right center;
+  animation: turnOutPrev 0.2s ease-in both;
+}
+.turn-in-prev {
+  transform-origin: right center;
+  animation: turnInPrev 0.4s cubic-bezier(0.22, 0.68, 0.24, 1) backwards;
+}
+
+@keyframes turnOutNext {
+  0% { transform: perspective(1600rpx) rotateY(0deg); opacity: 1; }
+  60% { opacity: 0.5; }
+  100% { transform: perspective(1600rpx) rotateY(-78deg); opacity: 0.06; }
+}
+@keyframes turnInNext {
+  0% { transform: perspective(1600rpx) rotateY(26deg); opacity: 0.2; }
+  100% { transform: perspective(1600rpx) rotateY(0deg); opacity: 1; }
+}
+@keyframes turnOutPrev {
+  0% { transform: perspective(1600rpx) rotateY(0deg); opacity: 1; }
+  60% { opacity: 0.5; }
+  100% { transform: perspective(1600rpx) rotateY(78deg); opacity: 0.06; }
+}
+@keyframes turnInPrev {
+  0% { transform: perspective(1600rpx) rotateY(-26deg); opacity: 0.2; }
+  100% { transform: perspective(1600rpx) rotateY(0deg); opacity: 1; }
+}
+
 /* 其它 */
 .tag {
   display: inline-block;
   padding: 2rpx 14rpx;
   border-radius: 999rpx;
   font-size: 22rpx;
-  background: #EFEFF4;
+  background: var(--fill);
   color: var(--text2);
 }
 .empty { padding: 120rpx 0; text-align: center; color: var(--text2); font-size: 28rpx; }

@@ -1,8 +1,9 @@
 const store = require('../../utils/store');
 const word = require('../../utils/word');
 const config = require('../../config');
+const flip = require('../../utils/flip');
 
-Page({
+Page(flip.mixin({
   data: {
     index: 0,
     total: 0,
@@ -19,6 +20,7 @@ Page({
 
   onLoad(query) {
     this.list = word.all();
+    this.setData(getApp().themeData());
     const target = decodeURIComponent(query.w || '');
     let i = this.list.findIndex(it => it.w === target);
     if (i < 0) i = 0;
@@ -28,7 +30,17 @@ Page({
     this.show(i);
   },
 
+  onShow() {
+    this.setData(getApp().themeData());
+  },
+
+  syncTheme() {
+    this.setData(getApp().themeData());
+    if (this.data.w) this.show(this.data.index);
+  },
+
   onUnload() {
+    this.stopTurn();
     if (this.audio) {
       this.audio.destroy();
       this.audio = null;
@@ -47,17 +59,19 @@ Page({
       lv: store.status(it.w),
       ex: word.example(it),
       dr: it.dr || [],
-      card: word.card(it.ch, it.w)
+      card: word.card(it.ch, it.w, this.data.dark)
     });
     wx.setNavigationBarTitle({ title: it.w });
   },
 
   prev() {
-    this.show((this.data.index - 1 + this.data.total) % this.data.total);
+    const i = (this.data.index - 1 + this.data.total) % this.data.total;
+    this.turnTo('prev', () => this.show(i));
   },
 
   next() {
-    this.show((this.data.index + 1) % this.data.total);
+    const i = (this.data.index + 1) % this.data.total;
+    this.turnTo('next', () => this.show(i));
   },
 
   play() {
@@ -65,15 +79,6 @@ Page({
     this.audio.stop();
     this.audio.src = config.AUDIO_API + encodeURIComponent(this.data.w);
     this.audio.play();
-  },
-
-  copy() {
-    const it = word.get(this.data.w);
-    if (!it) return;
-    wx.setClipboardData({
-      data: word.copyFull(it),
-      success: () => wx.showToast({ title: '已复制（含例句）', icon: 'none' })
-    });
   },
 
   onExpand() {
@@ -97,4 +102,4 @@ Page({
     this.setData({ lv: store.status(this.data.w) });
     wx.showToast({ title: '已加入待复习', icon: 'none' });
   }
-});
+}));

@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page {{themeClass}}">
   <view class="h1">我的</view>
   <view class="h2">{{stats.learned}} / {{total}} 词已学习 · 正确率 {{stats.accuracy}}%</view>
 
@@ -15,6 +15,22 @@
       <view class="cell">
         <view class="cell-main"><view class="cell-title">连续打卡</view></view>
         <view class="cell-value">{{stats.streak}} 天</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="group">
+    <view class="group-title">外观</view>
+    <view class="card">
+      <view
+        class="cell"
+        wx:for="{{themes}}"
+        wx:key="value"
+        data-v="{{item.value}}"
+        bindtap="onThemeMode"
+      >
+        <view class="cell-main"><view class="cell-title">{{item.label}}</view></view>
+        <text class="check" wx:if="{{themeMode === item.value}}">✓</text>
       </view>
     </view>
   </view>
@@ -54,7 +70,7 @@
           <view class="cell-title">认识后看拓展</view>
           <view class="cell-sub">标记「认识」后展示书中例句与相近单词</view>
         </view>
-        <switch checked="{{plan.showExpand}}" color="#007AFF" bindchange="onToggleExpand" />
+        <switch checked="{{plan.showExpand}}" color="{{dark ? '#0A84FF' : '#007AFF'}}" bindchange="onToggleExpand" />
       </view>
     </view>
   </view>
@@ -74,7 +90,7 @@
           <view class="cell-title">自动同步</view>
           <view class="cell-sub">学习后自动上传，启动时自动合并</view>
         </view>
-        <switch checked="{{plan.autoSync}}" color="#007AFF" bindchange="onToggleAutoSync" />
+        <switch checked="{{plan.autoSync}}" color="{{dark ? '#0A84FF' : '#007AFF'}}" bindchange="onToggleAutoSync" />
       </view>
       <view class="cell" bindtap="onSyncNow">
         <view class="cell-main">

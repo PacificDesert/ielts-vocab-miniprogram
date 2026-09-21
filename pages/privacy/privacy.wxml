@@ -1,4 +1,4 @@
-<view class="page doc">
+<view class="page doc {{themeClass}}">
   <view class="doc-title">用户协议与隐私政策</view>
   <view class="doc-sub">最近更新：{{updated}}</view>
 
@@ -51,7 +51,7 @@
     <view class="sec">
       <view class="sec-t">八、联系我们</view>
       <view class="sec-p">对以上内容有疑问，或需要删除你的云端数据，可发邮件至：</view>
-      <view class="mail" hover-class="btn-hover" bindtap="onCopyEmail">{{email}}</view>
+      <text class="mail" selectable="{{true}}">{{email}}</text>
     </view>
 
     <view class="sec">

@@ -1,11 +1,13 @@
 .danger { color: var(--red); }
 
+.check { font-size: 34rpx; color: var(--blue); font-weight: 500; }
+
 .plan-cell { align-items: center; }
 
 .stepper {
   display: flex;
   align-items: center;
-  background: #EFEFF4;
+  background: var(--fill);
   border-radius: 16rpx;
   overflow: hidden;
   flex: none;
@@ -25,7 +27,8 @@
   height: 64rpx;
   text-align: center;
   font-size: 30rpx;
-  background: #ffffff;
+  background: var(--card);
+  color: var(--text);
 }
 
 .presets {
@@ -37,12 +40,12 @@
 .preset {
   padding: 10rpx 28rpx;
   border-radius: 999rpx;
-  background: #EFEFF4;
+  background: var(--fill);
   color: var(--text2);
   font-size: 26rpx;
 }
 .preset-on {
-  background: rgba(0, 122, 255, 0.12);
+  background: var(--blue-soft);
   color: var(--blue);
   font-weight: 500;
 }

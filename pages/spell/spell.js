@@ -1,5 +1,5 @@
 const store = require('../../utils/store');
-const word = require('../../utils/word');
+const flip = require('../../utils/flip');
 
 function buildMask(text, reveal) {
   let i = 0;
@@ -13,7 +13,7 @@ function buildMask(text, reveal) {
   }).join(' ');
 }
 
-Page({
+Page(flip.mixin({
   data: {
     list: [],
     idx: 0,
@@ -34,7 +34,16 @@ Page({
   },
 
   onShow() {
+    this.setData(getApp().themeData());
     if (!this.data.list.length) this.again();
+  },
+
+  onUnload() {
+    this.stopTurn();
+  },
+
+  syncTheme() {
+    this.setData(getApp().themeData());
   },
 
   again() {
@@ -110,21 +119,12 @@ Page({
       this.setData({ done: true, acc: this.accuracy() });
       return;
     }
-    this.setData({ idx: n }, () => this.sync());
+    this.turnTo('next', () => this.setData({ idx: n }, () => this.sync()));
   },
 
   accuracy() {
     const total = this.data.right + this.data.wrong;
     return total ? Math.round(this.data.right * 100 / total) : 0;
-  },
-
-  copy() {
-    const it = word.get(this.data.cur.w);
-    if (!it) return;
-    wx.setClipboardData({
-      data: word.copyText(it),
-      success: () => wx.showToast({ title: '已复制', icon: 'none' })
-    });
   },
 
   goHome() {
@@ -134,4 +134,4 @@ Page({
   goStudy() {
     wx.navigateTo({ url: '/pages/study/study' });
   }
-});
+}));

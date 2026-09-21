@@ -1,7 +1,8 @@
 const store = require('../../utils/store');
 const word = require('../../utils/word');
+const flip = require('../../utils/flip');
 
-Page({
+Page(flip.mixin({
   data: {
     list: [],
     idx: 0,
@@ -15,7 +16,21 @@ Page({
 
   onLoad() {
     const list = store.nextLearnBatch();
-    this.setData({ list, done: !list.length }, () => this.sync());
+    this.setData(Object.assign({ list, done: !list.length }, getApp().themeData()), () => this.sync());
+  },
+
+  onShow() {
+    this.setData(getApp().themeData());
+  },
+
+  onUnload() {
+    this.stopTurn();
+  },
+
+  syncTheme() {
+    this.setData(getApp().themeData());
+    const cur = this.data.list[this.data.idx];
+    if (cur && cur.w) this.setData({ card: word.card(cur.ch, cur.w, getApp().themeData().dark) });
   },
 
   sync() {
@@ -23,7 +38,7 @@ Page({
     this.setData({
       cur,
       show: false,
-      card: cur.w ? word.card(cur.ch, cur.w) : {}
+      card: cur.w ? word.card(cur.ch, cur.w, this.data.dark) : {}
     });
   },
 
@@ -47,27 +62,25 @@ Page({
     const nextIdx = idx + 1;
     const finished = nextIdx >= list.length;
     store.save();
-    this.setData({
-      right: right + (known ? 1 : 0),
-      wrong: wrong + (known ? 0 : 1),
-      idx: finished ? idx : nextIdx,
-      done: finished
-    }, () => {
-      if (!finished) this.sync();
-    });
+
+    const advance = () => {
+      this.setData({
+        right: right + (known ? 1 : 0),
+        wrong: wrong + (known ? 0 : 1),
+        idx: finished ? idx : nextIdx,
+        done: finished
+      }, () => {
+        if (!finished) this.sync();
+      });
+    };
+
     // 认识 → 进入拓展页看例句与相近词（可在「我的」里关闭）
     if (known && store.get().plan.showExpand) {
+      advance();
       wx.navigateTo({ url: '/pages/expand/expand?w=' + encodeURIComponent(target) + '&from=study' });
+      return;
     }
-  },
-
-  copy() {
-    const it = word.get(this.data.cur.w);
-    if (!it) return;
-    wx.setClipboardData({
-      data: word.copyText(it),
-      success: () => wx.showToast({ title: '已复制', icon: 'none' })
-    });
+    this.turnTo('next', advance);
   },
 
   again() {
@@ -82,4 +95,4 @@ Page({
   goHome() {
     wx.switchTab({ url: '/pages/index/index' });
   }
-});
+}));

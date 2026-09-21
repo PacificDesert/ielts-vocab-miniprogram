@@ -1,5 +1,6 @@
 const store = require('./utils/store');
 const cloud = require('./utils/cloud');
+const theme = require('./utils/theme');
 
 App({
   globalData: {
@@ -9,8 +10,16 @@ App({
   },
 
   onLaunch() {
+    theme.init();
     this.globalData.cloudReady = cloud.init();
     store.load();
+
+    // 系统主题变化 / 用户手动切换时，同步刷新当前页面
+    theme.watch(() => {
+      const pages = getCurrentPages();
+      const cur = pages[pages.length - 1];
+      if (cur && cur.syncTheme) cur.syncTheme();
+    });
 
     if (!this.globalData.cloudReady) return;
 
@@ -41,6 +50,11 @@ App({
         })
         .catch(() => {});
     }
+  },
+
+  /** 页面在 onShow 里取主题：this.setData(getApp().themeData()) */
+  themeData() {
+    return theme.data();
   },
 
   /** 同步回来后刷新当前页面数据 */

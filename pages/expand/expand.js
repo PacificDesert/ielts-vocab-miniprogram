@@ -1,8 +1,9 @@
 const store = require('../../utils/store');
 const word = require('../../utils/word');
 const config = require('../../config');
+const flip = require('../../utils/flip');
 
-Page({
+Page(flip.mixin({
   data: {
     cur: {},
     img: '',
@@ -18,12 +19,25 @@ Page({
   onLoad(q) {
     this.audio = wx.createInnerAudioContext();
     this.audio.onError(() => wx.showToast({ title: '发音加载失败', icon: 'none' }));
-    this.setData({ from: q.from || '' });
+    this.setData(Object.assign({ from: q.from || '' }, getApp().themeData()));
     this.show(decodeURIComponent(q.w || ''));
   },
 
+  onShow() {
+    this.setData(getApp().themeData());
+  },
+
+  syncTheme() {
+    this.setData(getApp().themeData());
+    if (this.data.cur && this.data.cur.w) this.show(this.data.cur.w);
+  },
+
   onUnload() {
-    if (this.audio) this.audio.destroy();
+    this.stopTurn();
+    if (this.audio) {
+      this.audio.destroy();
+      this.audio = null;
+    }
   },
 
   show(name) {
@@ -35,7 +49,7 @@ Page({
     this.setData({
       cur: it,
       img: word.themeImage(it.ch),
-      card: word.card(it.ch, it.w),
+      card: word.card(it.ch, it.w, this.data.dark),
       ex: word.example(it),
       sim: word.similar(it),
       dr: it.dr || [],
@@ -44,20 +58,47 @@ Page({
     wx.setNavigationBarTitle({ title: it.w });
   },
 
+  /** 点相近词：翻书式切到该词 */
   onSimilar(e) {
-    this.show(e.currentTarget.dataset.w);
+    const w = e.currentTarget.dataset.w;
+    this.turnTo('next', () => this.show(w));
   },
 
-  onCopy() {
-    wx.setClipboardData({
-      data: word.copyFull(this.data.cur),
-      success: () => wx.showToast({ title: '已复制', icon: 'none' })
-    });
+  /** 顺着词库顺序进入下一个单词 */
+  onNextWord() {
+    const list = word.all();
+    const i = this.data.cur.i;
+    const next = typeof i === 'number' ? list[i + 1] : null;
+    if (!next) {
+      wx.showToast({ title: '已经是最后一个单词', icon: 'none' });
+      return;
+    }
+    this.turnTo('next', () => this.show(next.w));
+  },
+
+  /** 跳到当前词的第一个相近词 */
+  onSimilarNext() {
+    const next = (this.data.sim || [])[0];
+    if (!next) {
+      wx.showToast({ title: '没有相近词', icon: 'none' });
+      return;
+    }
+    this.turnTo('next', () => this.show(next.w));
   },
 
   onSpeak() {
+    this.speakWord(this.data.cur.w);
+  },
+
+  /** 列表里的发音按钮：朗读该行单词，不触发进入该词 */
+  onSpeakWord(e) {
+    this.speakWord(e.currentTarget.dataset.w);
+  },
+
+  speakWord(w) {
+    if (!config.AUDIO_API || !w || !this.audio) return;
     this.audio.stop();
-    this.audio.src = config.AUDIO_API + encodeURIComponent(this.data.cur.w);
+    this.audio.src = config.AUDIO_API + encodeURIComponent(w);
     this.audio.play();
   },
 
@@ -72,13 +113,7 @@ Page({
     wx.showToast({ title: '已标记认识', icon: 'none' });
   },
 
-  onNext() {
-    if (this.data.from === 'study') {
-      wx.navigateBack();
-      return;
-    }
-    const next = word.similar(this.data.cur)[0];
-    if (next) this.show(next.w);
-    else wx.navigateBack();
+  onBackStudy() {
+    wx.navigateBack();
   }
-});
+}));

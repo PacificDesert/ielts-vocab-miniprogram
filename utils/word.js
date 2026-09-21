@@ -84,14 +84,47 @@ const CHAPTER_STYLE = {
   '时间日期': { ink: '#414F60', tint: '238,242,245' }
 };
 
-/** 词卡样式：每个单词都会拿到一张带章节底色与首字母水印的卡片 */
-function card(ch, w) {
+function hexRgb(hex) {
+  const h = String(hex).replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+function mixTo(rgb, target, amt) {
+  return rgb.map(c => Math.round(c + (target - c) * amt));
+}
+
+function rgbaStr(rgb, a) {
+  return 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a + ')';
+}
+
+function rgbStr(rgb) {
+  return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+}
+
+/**
+ * 词卡样式：每个单词都会拿到一张带章节底色与首字母水印的卡片。
+ * dark=true 时把章节色调暗做底、把标签文字提亮，适配深色主题。
+ */
+function card(ch, w, dark) {
   const st = CHAPTER_STYLE[ch] || { ink: '#3E4F60', tint: '238,242,245' };
+  const accent = hexRgb(st.ink);
+  let tint, ink, veil;
+  if (dark) {
+    tint = mixTo(accent, 20, 0.86);
+    ink = mixTo(accent, 255, 0.55);
+    veil = 'linear-gradient(180deg, ' + rgbaStr(tint, 0.34) + ' 0%, '
+      + rgbaStr(tint, 0.72) + ' 46%, ' + rgbaStr(tint, 0.97) + ' 100%)';
+  } else {
+    tint = hexRgb(st.tint);
+    ink = accent;
+    veil = 'linear-gradient(180deg, ' + rgbaStr(tint, 0.12) + ' 0%, '
+      + rgbaStr(tint, 0.62) + ' 46%, ' + rgbaStr(tint, 0.96) + ' 100%)';
+  }
   return {
     img: themeImage(ch),
-    ink: st.ink,
-    tint: st.tint,
-    veil: 'linear-gradient(180deg, rgba(' + st.tint + ',0.12) 0%, rgba(' + st.tint + ',0.62) 46%, rgba(' + st.tint + ',0.96) 100%)',
+    ink: rgbStr(ink),
+    tint: rgbStr(tint),
+    veil,
     mono: String(w || ' ').charAt(0).toUpperCase()
   };
 }
@@ -108,22 +141,8 @@ function example(it) {
   return { en: it.ex[0], zh: it.ex[1] || '' };
 }
 
-/** 格式化复制文本 */
-function copyText(it) {
-  const ph = it.ph ? ` ${it.ph}` : '';
-  return `${it.w}${ph}\n${it.cn}`;
-}
-
-/** 拓展页复制文本：单词 + 音标 + 释义 + 例句 */
-function copyFull(it) {
-  const lines = [it.w + (it.ph ? ' ' + it.ph : ''), it.cn];
-  const ex = example(it);
-  if (ex) lines.push(ex.en, ex.zh);
-  return lines.filter(Boolean).join('\n');
-}
-
 module.exports = {
   all, get, chapterList, chapterWords, search, slice,
-  themeImage, card, similar, example, copyText, copyFull,
+  themeImage, card, similar, example,
   total: words.list.length
 };
