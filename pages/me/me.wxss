@@ -4,48 +4,16 @@
 
 .plan-cell { align-items: center; }
 
-.stepper {
-  display: flex;
-  align-items: center;
+/* 每组单词数：纯手动输入，不提供预设值 */
+.plan-input {
+  width: 180rpx;
+  height: 72rpx;
+  text-align: center;
+  font-size: 34rpx;
+  font-weight: 500;
   background: var(--fill);
+  color: var(--text);
   border-radius: 16rpx;
-  overflow: hidden;
   flex: none;
 }
-.step {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
-  color: var(--blue);
-  line-height: 1;
-}
-.step-input {
-  width: 104rpx;
-  height: 64rpx;
-  text-align: center;
-  font-size: 30rpx;
-  background: var(--card);
-  color: var(--text);
-}
-
-.presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  padding: 0 32rpx 24rpx;
-}
-.preset {
-  padding: 10rpx 28rpx;
-  border-radius: 999rpx;
-  background: var(--fill);
-  color: var(--text2);
-  font-size: 26rpx;
-}
-.preset-on {
-  background: var(--blue-soft);
-  color: var(--blue);
-  font-weight: 500;
-}
+.plan-ph { color: var(--text3); font-weight: 400; }

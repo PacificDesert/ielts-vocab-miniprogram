@@ -24,9 +24,10 @@ page, .t-light {
     --bg: #000000;
     --card: #1C1C1E;
     --fill: #2C2C2E;
+    --fill-2: #2C2C2E;
     --text: #FFFFFF;
-    --text2: #98989F;
-    --text3: #48484A;
+    --text2: #E5E5EA;
+    --text3: #AEAEB2;
     --line: #38383A;
     --blue: #0A84FF;
     --blue-soft: rgba(10, 132, 255, 0.18);
@@ -42,9 +43,10 @@ page, .t-light {
   --bg: #000000;
   --card: #1C1C1E;
   --fill: #2C2C2E;
+  --fill-2: #2C2C2E;
   --text: #FFFFFF;
-  --text2: #98989F;
-  --text3: #48484A;
+  --text2: #E5E5EA;
+  --text3: #AEAEB2;
   --line: #38383A;
   --blue: #0A84FF;
   --blue-soft: rgba(10, 132, 255, 0.18);

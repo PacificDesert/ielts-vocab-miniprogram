@@ -64,26 +64,21 @@ Page(flip.mixin({
     this.turnTo('next', () => this.show(w));
   },
 
-  /** 顺着词库顺序进入下一个单词 */
+  /**
+   * 下一个单词：回到「记忆单词」的大卡片继续背，而不是停在拓展页里翻词。
+   * 从学习页进来时直接返回——学习页已经停在下一个单词的记忆卡上；
+   * 从详情 / 词库进来时，以该词为起点开一组记忆卡。
+   */
   onNextWord() {
     const list = word.all();
     const i = this.data.cur.i;
     const next = typeof i === 'number' ? list[i + 1] : null;
+    if (this.data.from === 'study') return wx.navigateBack();
     if (!next) {
       wx.showToast({ title: '已经是最后一个单词', icon: 'none' });
       return;
     }
-    this.turnTo('next', () => this.show(next.w));
-  },
-
-  /** 跳到当前词的第一个相近词 */
-  onSimilarNext() {
-    const next = (this.data.sim || [])[0];
-    if (!next) {
-      wx.showToast({ title: '没有相近词', icon: 'none' });
-      return;
-    }
-    this.turnTo('next', () => this.show(next.w));
+    wx.redirectTo({ url: '/pages/study/study?i=' + next.i });
   },
 
   onSpeak() {
@@ -111,9 +106,5 @@ Page(flip.mixin({
     store.save();
     this.setData({ lv: store.status(this.data.cur.w) });
     wx.showToast({ title: '已标记认识', icon: 'none' });
-  },
-
-  onBackStudy() {
-    wx.navigateBack();
   }
 }));

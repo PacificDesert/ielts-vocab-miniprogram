@@ -41,29 +41,18 @@
       <view class="cell plan-cell">
         <view class="cell-main">
           <view class="cell-title">每组单词数</view>
-          <view class="cell-sub">最少 {{min}} 个，不设上限（最多按词库 {{total}} 词）</view>
+          <view class="cell-sub">手动输入，最少 {{min}} 个，不设上限（词库共 {{total}} 词）</view>
         </view>
-        <view class="stepper">
-          <view class="step" hover-class="btn-hover" bindtap="decPlan">−</view>
-          <input
-            class="step-input mono"
-            type="number"
-            value="{{planInput}}"
-            bindinput="onPlanInput"
-            bindblur="onPlanBlur"
-            bindconfirm="onPlanBlur"
-          />
-          <view class="step" hover-class="btn-hover" bindtap="incPlan">＋</view>
-        </view>
-      </view>
-      <view class="presets">
-        <view
-          class="preset {{plan.perRound === item ? 'preset-on' : ''}}"
-          wx:for="{{presets}}"
-          wx:key="*this"
-          data-n="{{item}}"
-          bindtap="onPreset"
-        >{{item}}</view>
+        <input
+          class="plan-input mono"
+          type="number"
+          value="{{planInput}}"
+          placeholder="输入数量"
+          placeholder-class="plan-ph"
+          bindinput="onPlanInput"
+          bindblur="onPlanBlur"
+          bindconfirm="onPlanBlur"
+        />
       </view>
       <view class="cell">
         <view class="cell-main">

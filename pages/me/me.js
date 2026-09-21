@@ -4,7 +4,6 @@ const cloud = require('../../utils/cloud');
 const config = require('../../config');
 const theme = require('../../utils/theme');
 
-const PRESETS = [10, 20, 30, 50, 100, 200, 500];
 const THEMES = [
   { value: 'auto', label: '跟随系统' },
   { value: 'light', label: '浅色' },
@@ -16,10 +15,8 @@ Page({
     stats: {},
     plan: {},
     planInput: '20',
-    presets: PRESETS,
     themes: THEMES,
     themeMode: 'auto',
-    step: 5,
     min: config.PLAN_MIN,
     cloud: false,
     syncText: '',
@@ -43,7 +40,6 @@ Page({
       total: word.total,
       plan,
       planInput: String(plan.perRound),
-      step: this.stepOf(plan.perRound),
       cloud: cloud.isReady(),
       syncText: cloud.isReady() ? '已开启' : '未配置云环境',
       syncAt: this.formatSync(store.lastSync())
@@ -59,16 +55,9 @@ Page({
       + p(d.getHours()) + ':' + p(d.getMinutes());
   },
 
-  stepOf(n) {
-    if (n < 50) return 5;
-    if (n < 200) return 10;
-    if (n < 500) return 50;
-    return 100;
-  },
-
   commit(n) {
     const plan = store.setPerRound(n);
-    this.setData({ plan, planInput: String(plan.perRound), step: this.stepOf(plan.perRound) });
+    this.setData({ plan, planInput: String(plan.perRound) });
     wx.showToast({ title: '每组 ' + plan.perRound + ' 个', icon: 'none' });
   },
 
@@ -78,18 +67,6 @@ Page({
 
   onPlanBlur() {
     this.commit(this.data.planInput);
-  },
-
-  decPlan() {
-    this.commit(this.data.plan.perRound - this.data.step);
-  },
-
-  incPlan() {
-    this.commit(this.data.plan.perRound + this.data.step);
-  },
-
-  onPreset(e) {
-    this.commit(e.currentTarget.dataset.n);
   },
 
   onToggleExpand(e) {

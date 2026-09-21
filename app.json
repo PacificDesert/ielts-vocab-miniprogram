@@ -7,6 +7,7 @@
     "pages/study/study",
     "pages/detail/detail",
     "pages/expand/expand",
+    "pages/match/match",
     "pages/privacy/privacy"
   ],
   "window": {

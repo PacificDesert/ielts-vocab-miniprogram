@@ -19,7 +19,7 @@
 .phone[data-theme="dark"]{
   --bg:#000; --card:#1C1C1E; --fill:#2C2C2E; --fill-2:#2C2C2E;
   --cell-hover:#2C2C2E;
-  --text:#fff; --text2:#98989F; --text3:#48484A;
+  --text:#fff; --text2:#E5E5EA; --text3:#AEAEB2;
   --line:#38383A; --blue:#0A84FF; --blue-soft:rgba(10,132,255,.18);
   --green:#30D158; --red:#FF453A; --orange:#FF9F0A;
   --nav-bg:rgba(28,28,30,.94); --tab-bg:rgba(28,28,30,.94);
@@ -29,7 +29,7 @@
   .phone[data-theme="auto"]{
     --bg:#000; --card:#1C1C1E; --fill:#2C2C2E; --fill-2:#2C2C2E;
     --cell-hover:#2C2C2E;
-    --text:#fff; --text2:#98989F; --text3:#48484A;
+    --text:#fff; --text2:#E5E5EA; --text3:#AEAEB2;
     --line:#38383A; --blue:#0A84FF; --blue-soft:rgba(10,132,255,.18);
     --green:#30D158; --red:#FF453A; --orange:#FF9F0A;
     --nav-bg:rgba(28,28,30,.94); --tab-bg:rgba(28,28,30,.94);
@@ -213,9 +213,6 @@ body.dark .side h1{color:#fff}
 .step{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--blue);cursor:pointer;user-select:none}
 .step:active{background:var(--fill-2)}
 .step-input{width:52px;height:32px;border:none;outline:none;text-align:center;font-size:15px;background:var(--card);color:var(--text);font-family:inherit}
-.presets{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 12px}
-.preset{padding:5px 14px;border-radius:99px;background:var(--fill);color:var(--text2);font-size:13px;cursor:pointer}
-.preset-on{background:var(--blue-soft);color:var(--blue);font-weight:500}
 .switch{width:51px;height:31px;border-radius:99px;background:var(--fill-2);position:relative;cursor:pointer;flex:none;transition:background .2s}
 .switch.on{background:var(--green)}
 .switch i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
@@ -257,7 +254,7 @@ body.dark .side h1{color:#fff}
       <li>「词库」里搜 <span class="k">volcano</span> 或 <span class="k">火山</span></li>
       <li><b>认识</b> 一下会跳到「单词拓展」页：例句 + 词形拓展 + 相近单词</li>
       <li>拓展页点相近词可以一直联想，每行右侧圆钮单独读该词读音</li>
-      <li>拓展页底部 <b>下一个单词</b> 会按词库顺序继续往下走</li>
+      <li>拓展页底部 <b>下一个单词</b> 会跳回「记忆单词」的大卡片继续背</li>
       <li>「我的」→ <b>外观</b> 可切「跟随系统 / 浅色 / 深色」，整机界面跟着变</li>
       <li>「我的」里 <b>每组单词数</b> 可自己输入，<b>最少 1、不设上限</b>（最多按词库 3328 词）</li>
       <li>嫌拓展页打扰？「我的」里关掉「认识后看拓展」即可</li>
@@ -370,6 +367,22 @@ function nextLearn(n) {
   }
   save();
   return out;
+}
+/* 从指定下标开始取一批：拓展页「下一个单词」跳转进来时用，不推进全局游标 */
+function nextLearnFrom(start, n) {
+  const out = [];
+  const begin = Math.max(0, Math.min(start, WORDS.length - 1));
+  const total = Math.min(n || S.plan, WORDS.length);
+  let i = begin;
+  let guard = 0;
+  while (out.length < total && guard < WORDS.length * 2) {
+    guard++;
+    if (i >= WORDS.length) i = 0;
+    const w = WORDS[i++];
+    if (!w.cn || lv(w.w) >= 5) continue;
+    out.push(w);
+  }
+  return out.length ? out : [WORDS[begin]];
 }
 function nextSpell(n) {
   const pool = WORDS.filter(w => w.cn);
@@ -681,16 +694,12 @@ function vExpand() {
     + '<div class="tags"><span class="tag">' + lvTag(v) + '</span></div></div></div>'
     + exBlock(w) + drBlock(w) + simList(w, 'sim')
     + '</div>'
-    + '<div class="group"><div class="hero-act" style="margin-top:0">'
-    + '<button class="btn btn-plain" data-act="detail">单词详情</button>'
-    + ((w.sim && w.sim.length) ? '<button class="btn btn-ghost" data-act="simnext">下一个相近词</button>' : '')
-    + '</div>'
+    + '<div class="group">'
+    + '<button class="btn btn-plain btn-block" data-act="detail">单词详情</button>'
     + '<div style="height:10px"></div>'
     + '<button class="btn btn-primary btn-block" data-act="nextword">下一个单词</button>'
-    + '<div style="height:10px"></div>'
-    + (fromStudy
-      ? '<button class="btn btn-plain btn-block" data-act="backstudy">继续学习</button>'
-      : '<button class="btn btn-plain btn-block" data-act="known">标记为认识</button>')
+    + (fromStudy ? '' : '<div style="height:10px"></div>'
+      + '<button class="btn btn-plain btn-block" data-act="known">标记为认识</button>')
     + '</div>';
 }
 
@@ -793,13 +802,10 @@ function vMe() {
     + '<div class="group"><div class="group-title">学习计划</div><div class="card">'
     + '<div class="cell" style="cursor:default"><div class="cell-main">'
     + '<div class="cell-title">每组单词数</div>'
-    + '<div class="cell-sub">最少 1 个，不设上限（最多按词库 ' + WORDS.length + ' 词）</div></div>'
+    + '<div class="cell-sub">手动输入，最少 1 个，不设上限（词库共 ' + WORDS.length + ' 词）</div></div>'
     + '<div class="stepper"><div class="step" data-act="decPlan">−</div>'
     + '<input class="step-input" type="number" value="' + S.plan + '" data-act="planInput">'
     + '<div class="step" data-act="incPlan">＋</div></div></div>'
-    + '<div class="presets">' + [10, 20, 30, 50, 100, 200, 500].map(n =>
-        '<div class="preset' + (S.plan === n ? ' preset-on' : '') + '" data-plan="' + n + '">' + n + '</div>').join('')
-    + '</div>'
     + '<div class="cell" style="cursor:default"><div class="cell-main">'
     + '<div class="cell-title">认识后看拓展</div>'
     + '<div class="cell-sub">标记「认识」后展示例句与相近单词</div></div>'
@@ -877,10 +883,6 @@ function bind(s) {
     ev.stopPropagation();
     speak(el.dataset.speakw);
   });
-  s.querySelectorAll('[data-plan]').forEach(el => el.onclick = () => {
-    S.plan = clampPlan(Number(el.dataset.plan));
-    save(); render();
-  });
   const pin = s.querySelector('[data-act="planInput"]');
   if (pin) pin.onblur = () => { S.plan = clampPlan(pin.value); save(); render(); };
   const q = s.querySelector('#q');
@@ -897,14 +899,19 @@ function bind(s) {
 function act(a, el) {
   el = el || {};
   const w = cur.word;
-  if (a === 'learn') { study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false }; if (!study.list.length) { toast('没有可学的单词'); return; } return show('study', 'learn'); }
+  if (a === 'learn') { cur.startIdx = -1; study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false }; if (!study.list.length) { toast('没有可学的单词'); return; } return show('study', 'learn'); }
   if (a === 'again') {
-    if (cur.screen === 'study') { study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false }; return render(); }
+    if (cur.screen === 'study') {
+      const i = cur.startIdx;
+      study = { list: (i >= 0 ? nextLearnFrom(i) : nextLearn(S.plan)), idx: 0, show: false, right: 0, wrong: 0, done: false };
+      return render();
+    }
     return startSpell();
   }
   if (a === 'home') { study = null; spell = null; return go('learn'); }
   if (a === 'tospell' || a === 'tolearn') {
     if (a === 'tospell') return go('spell');
+    cur.startIdx = -1;
     study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false };
     return show('study', 'learn');
   }
@@ -946,24 +953,20 @@ function act(a, el) {
     return show('expand', 'vocab');
   }
   if (a === 'detail') return show('detail', 'vocab');
-  if (a === 'backstudy') { study.show = false; return show('study', 'learn'); }
   /* 相近词：翻书式切到该词 */
   if (a === 'sim') {
     const o = byWord[String(el.dataset.sim || '').toLowerCase()];
     if (!o) return;
     return turnTo('next', () => { cur.word = o; });
   }
-  /* 按词库顺序进入下一个单词 */
+  /* 下一个单词：回到「记忆单词」的大卡片继续背 */
   if (a === 'nextword') {
+    if (cur.expandFrom === 'study') { study.show = false; return show('study', 'learn'); }
     const next = WORDS[w.i + 1];
     if (!next) return toast('已经是最后一个单词');
-    return turnTo('next', () => { cur.word = next; });
-  }
-  /* 跳到当前词的第一个相近词 */
-  if (a === 'simnext') {
-    const next = (w.sim || []).map(i => WORDS[i])[0];
-    if (!next) return toast('没有相近词');
-    return turnTo('next', () => { cur.word = next; });
+    cur.startIdx = next.i;
+    study = { list: nextLearnFrom(next.i), idx: 0, show: false, right: 0, wrong: 0, done: false };
+    return show('study', 'learn');
   }
   /* 详情页翻页 */
   if (a === 'prev' || a === 'next') {

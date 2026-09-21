@@ -14,9 +14,19 @@ Page(flip.mixin({
     card: {}
   },
 
-  onLoad() {
-    const list = store.nextLearnBatch();
+  onLoad(q) {
+    // 从拓展页「下一个单词」进来时带 ?i=<词库下标>，直接以该词为起点开一组记忆卡
+    const idx = q && q.i !== undefined && q.i !== '' ? Number(q.i) : NaN;
+    this.start = isNaN(idx) ? -1 : idx;
+    const list = this.pickBatch();
+    // 记下这一组，背完后可以直接拿来做「意思匹配」
+    getApp().globalData.lastBatch = list;
     this.setData(Object.assign({ list, done: !list.length }, getApp().themeData()), () => this.sync());
+  },
+
+  /** start >= 0 说明是拓展页跳转进来的，按起点取词；否则走正常的学习游标 */
+  pickBatch() {
+    return this.start >= 0 ? store.batchFrom(this.start) : store.nextLearnBatch();
   },
 
   onShow() {
@@ -84,8 +94,14 @@ Page(flip.mixin({
   },
 
   again() {
-    const list = store.nextLearnBatch();
+    const list = this.pickBatch();
+    getApp().globalData.lastBatch = list;
     this.setData({ list, idx: 0, done: !list.length, right: 0, wrong: 0, show: false }, () => this.sync());
+  },
+
+  /** 学完一组后做「单词意思匹配」 */
+  goMatch() {
+    wx.navigateTo({ url: '/pages/match/match' });
   },
 
   goSpell() {

@@ -95,11 +95,11 @@ function status(word) {
   return m.lv;
 }
 
-/** 每组单词数（用户自定义，越界会被夹到合法范围） */
+/** 每组单词数（用户手动输入，只保底不限顶） */
 function perRound() {
   const n = Number(state.plan.perRound);
   if (!n || isNaN(n)) return config.DEFAULT_PLAN.perRound;
-  return Math.max(config.PLAN_MIN, Math.min(config.PLAN_MAX, Math.round(n)));
+  return clampPlan(n);
 }
 
 /** 取下一批新词 */
@@ -117,6 +117,29 @@ function nextLearnBatch(count) {
     batch.push(it);
   }
   return batch;
+}
+
+/**
+ * 从指定下标开始取一批新词（拓展页跳「下一个单词」时用）。
+ * 只按起点往后取，不推进全局游标，避免打断正常的顺序学习。
+ */
+function batchFrom(start, count) {
+  const list = require('./word').all();
+  if (!list.length) return [];
+  const batch = [];
+  const n = Math.min(count || perRound(), list.length);
+  const begin = Math.max(0, Math.min(Number(start) || 0, list.length - 1));
+  let i = begin;
+  let guard = 0;
+  while (batch.length < n && guard < list.length * 2) {
+    guard += 1;
+    if (i >= list.length) i = 0;
+    const it = list[i];
+    i += 1;
+    if (!it.cn || status(it.w) >= 5) continue;
+    batch.push(it);
+  }
+  return batch.length ? batch : [list[begin]];
 }
 
 /** 取下一批拼写题：优先取已学过但未掌握的词 */
@@ -321,7 +344,7 @@ function reset() {
 
 module.exports = {
   load, save, flush, get, today, day, status, stats, streak,
-  markStudy, markSpell, nextLearnBatch, nextSpellBatch,
+  markStudy, markSpell, nextLearnBatch, batchFrom, nextSpellBatch,
   setPlan, setPerRound, toggleExpand, toggleAutoSync, perRound, clampPlan,
   sync, scheduleSync, lastSync,
   push, pull, reset, MASTER_LV

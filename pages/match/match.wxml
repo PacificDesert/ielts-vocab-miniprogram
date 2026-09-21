@@ -1,0 +1,61 @@
+<view class="page match {{themeClass}}">
+
+  <block wx:if="{{!done}}">
+    <view class="bar-head">
+      <view class="bar">
+        <view class="bar-fill" style="width:{{doneCount / total * 100}}%"></view>
+      </view>
+      <view class="bar-text">第 {{ri + 1}} / {{rounds.length}} 组 · 已配对 {{doneCount}} / {{total}}</view>
+    </view>
+
+    <view class="turn-wrap {{turn}}">
+      <view class="mgrid">
+        <view class="mcol">
+          <view
+            class="mtile {{item.st}} {{pickL === index ? 'picked' : ''}}"
+            wx:for="{{left}}"
+            wx:key="k"
+            data-side="l"
+            data-i="{{index}}"
+            hover-class="mtile-hover"
+            bindtap="onPick"
+          ><text class="mtile-t en">{{item.t}}</text></view>
+        </view>
+        <view class="mcol">
+          <view
+            class="mtile {{item.st}} {{pickR === index ? 'picked' : ''}}"
+            wx:for="{{right}}"
+            wx:key="k"
+            data-side="r"
+            data-i="{{index}}"
+            hover-class="mtile-hover"
+            bindtap="onPick"
+          ><text class="mtile-t">{{item.t}}</text></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="mtip">先点左边的英文单词，再点右边它的中文意思</view>
+  </block>
+
+  <block wx:else>
+    <view class="finish">
+      <view class="finish-title">本轮完成</view>
+      <view class="finish-row">
+        <view class="finish-col">
+          <view class="finish-num ok">{{ok}}</view>
+          <view class="finish-label">配对正确</view>
+        </view>
+        <view class="finish-col">
+          <view class="finish-num no">{{no}}</view>
+          <view class="finish-label">配对错误</view>
+        </view>
+      </view>
+      <view class="finish-acc">正确率 {{acc}}%</view>
+      <view class="btn btn-primary btn-block" hover-class="btn-hover" bindtap="again">再来一轮</view>
+      <view class="btn btn-ghost btn-block gap" hover-class="btn-hover" bindtap="goStudy">继续背单词</view>
+      <view class="btn btn-plain btn-block gap" hover-class="btn-hover" bindtap="goHome">返回首页</view>
+    </view>
+  </block>
+
+</view>

@@ -74,13 +74,9 @@
   </view>
 
   <view class="group">
-    <view class="btn-row">
-      <view class="btn btn-plain" hover-class="btn-hover" bindtap="onDetail">单词详情</view>
-      <view class="btn btn-ghost" wx:if="{{sim.length}}" hover-class="btn-hover" bindtap="onSimilarNext">下一个相近词</view>
-    </view>
+    <view class="btn btn-plain btn-block" hover-class="btn-hover" bindtap="onDetail">单词详情</view>
     <view class="btn btn-primary btn-block gap" hover-class="btn-hover" bindtap="onNextWord">下一个单词</view>
-    <view class="btn btn-plain btn-block gap" wx:if="{{from === 'study'}}" hover-class="btn-hover" bindtap="onBackStudy">继续学习</view>
-    <view class="btn btn-plain btn-block gap" wx:else hover-class="btn-hover" bindtap="onKnow">标记为认识</view>
+    <view class="btn btn-plain btn-block gap" wx:if="{{from !== 'study'}}" hover-class="btn-hover" bindtap="onKnow">标记为认识</view>
   </view>
 
 </view>

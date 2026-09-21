@@ -50,6 +50,7 @@
         </view>
       </view>
       <view class="btn btn-primary btn-block" hover-class="btn-hover" bindtap="again">再来一组</view>
+      <view class="btn btn-ghost btn-block gap" hover-class="btn-hover" bindtap="goMatch">单词意思匹配</view>
       <view class="btn btn-plain btn-block gap" hover-class="btn-hover" bindtap="goSpell">去拼写自测</view>
       <view class="btn btn-plain btn-block gap" hover-class="btn-hover" bindtap="goHome">返回首页</view>
     </view>
