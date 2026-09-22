@@ -1630,11 +1630,11 @@ function vSpell() {
   const c = spell.list[spell.idx];
   const cs = cardStyle(c.ch);
   const art = themeImg(c.ch);
-  /* 有声模式：每换一个词先读一遍读音（用 spoke 记账，避免 innerHTML 重建时重复出声） */
-  if (spell.spoke !== spell.idx) {
-    spell.spoke = spell.idx;
-    say(c.w);
-  }
+  /*
+   * 拼写页**不自动朗读**：拼写的任务是「看中文写英文」，
+   * 一进题就念出读音等于把答案报出来。想听的自己点卡上的小喇叭（speakq）。
+   * 旧行为用 spell.spoke 记账自动 say(c.w)，现已移除。
+   */
   return '<div class="bar-head"><div class="bar"><i style="width:' + (spell.idx / spell.list.length * 100) + '%"></i></div>'
     + '<div class="bar-txt">' + (spell.idx + 1) + ' / ' + spell.list.length + ' · 正确 ' + spell.right + '</div></div>'
     + '<div class="turn-wrap ' + turn + '" style="' + turnCss + '">'
