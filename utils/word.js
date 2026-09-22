@@ -191,7 +191,8 @@ const POS_LEAD = /^(n|adj|adv|v|vt|vi|prep|conj|pron|num|int|art|aux|abbr|ord)\.
  * 匹配页与记忆卡的选项都要靠它把词性补齐 —— 不补的话
  * 只有一部分选项带词性，用户一眼就能挑出答案。
  */
-const POS_MAP = {
+const POS_MAP = {  "myth": "n.",
+
   "Stuff": "n.",  "abandon": "v.",  "aboard": "adv./prep.",  "abortion": "n.",  "absorb": "v.",
   "academy": "n.",  "accommodation": "n.",  "accompany": "v.",  "accord": "v./n.",  "account": "n.",
   "accurate": "adj.",  "accuse": "v.",  "accustom": "v.",  "act": "n./v.",  "adequate": "adj.",
@@ -275,7 +276,7 @@ const POS_MAP = {
   "excavate": "v.",  "exceed": "v.",  "excessive": "adj.",  "execute": "v.",  "exercise": "n./v.",
   "exhale": "v.",  "exit": "n./v.",  "expand": "v.",  "expense": "n.",  "experiment": "n.",
   "experimental": "adj.",  "explain": "v.",  "explosion": "n.",  "exponent": "n.",  "extent": "n.",
-  "exterior": "n./adj.",  "extinction": "n.",  "extravagant": "adj.",  "fabric": "n.",
+  "exterior": "n./adv.",  "extinction": "n.",  "extravagant": "adj.",  "fabric": "n.",
   "facility": "n.",  "fade": "v.",  "failure": "n.",  "fair": "adj.",  "fan": "n./v.",
   "fare": "n.",  "farewell": "int./n.",  "fashion": "n./v.",  "fatal": "adj.",  "fault": "n./v.",
   "federal": "adj.",  "fee": "n.",  "fellowship": "n.",  "female": "n./adj.",  "fence": "n.",
@@ -330,9 +331,9 @@ const POS_MAP = {
   "majesty": "n.",  "mammal": "n.",  "manifest": "v.",  "manly": "adj.",  "manoeuvre": "n.",
   "mansion": "n.",  "mantle": "n.",  "manual": "n./adj.",  "marathon": "n.",  "marble": "n.",
   "marine": "adj./n.",  "mason": "n.",  "massacre": "n.",  "massive": "adj.",  "master": "n./v.",
-  "mat": "n.",  "material": "n./adj.",  "materialism": "n.",  "maximal": "adj.",  "mean": "n./adj.",
+  "mat": "n.",  "material": "n./adj.",  "materialism": "n.",  "maximal": "adj.",  "mean": "n./adv.",
   "meanwhile": "adv.",  "mechanic": "n.",  "medical": "adj.",  "medieval": "adj.",
-  "medium": "n./adj.",  "melon": "n.",  "melt": "v.",  "merchandise": "n.",  "mercy": "n.",
+  "medium": "n./adv.",  "melon": "n.",  "melt": "v.",  "merchandise": "n.",  "mercy": "n.",
   "merry": "adj.",  "mess": "v./n.",  "messenger": "n.",  "metabolism": "n.",  "microbe": "n.",
   "microcomputer": "n.",  "midst": "n.",  "mild": "adj.",  "military": "adj.",  "milkshake": "n.",
   "million": "num.",  "mineral": "n.",  "minimal": "adj.",  "minister": "n.",  "mint": "n./v.",
@@ -343,7 +344,7 @@ const POS_MAP = {
   "nap": "n.",  "nasty": "adj.",  "nation": "n.",  "necessity": "n.",  "neck": "n.",
   "needle": "n.",  "neglect": "v.",  "negotiation": "n.",  "nerve": "n.",  "network": "n.",
   "nobility": "n.",  "norm": "n.",  "notify": "v.",  "nourish": "v.",  "nursery": "n./adj.",
-  "oar": "n./v.",  "oasis": "n.",  "obey": "v.",  "objective": "n./adj.",  "observatory": "n.",
+  "oar": "n./v.",  "oasis": "n.",  "obey": "v.",  "objective": "n./adv.",  "observatory": "n.",
   "observe": "v.",  "occupation": "n.",  "ocean": "n.",  "offend": "v.",  "offer": "v./n.",
   "offspring": "n.",  "operation": "n.",  "opinion": "n.",  "optimal": "adj.",  "orbit": "n.",
   "organism": "n.",  "outcome": "n.",  "outfit": "n./v.",  "outlook": "n.",  "outward": "adj./adv.",
@@ -362,7 +363,7 @@ const POS_MAP = {
   "popularity": "n.",  "population": "n.",  "porcelain": "n.",  "porch": "n.",  "pore": "n./v.",
   "porridge": "n.",  "portfolio": "n.",  "portrait": "n.",  "postage": "n.",  "precise": "adj.",
   "predator": "n.",  "preference": "n.",  "prejudice": "n.",  "premier": "n./adj.",
-  "prepare": "v.",  "prerequisite": "n./adj.",  "presentation": "n.",  "president": "n.",
+  "prepare": "v.",  "prerequisite": "n./adv.",  "presentation": "n.",  "president": "n.",
   "press": "n.",  "prestige": "n.",  "presume": "v.",  "pretend": "v.",  "prevail": "v.",
   "prevent": "v.",  "prey": "n./v.",  "primary": "adj.",  "primate": "n.",  "prince": "n.",
   "prison": "n.",  "private": "adj.",  "privilege": "n.",  "prize": "n./v.",  "productive": "adj.",
@@ -378,7 +379,7 @@ const POS_MAP = {
   "react": "v.",  "reap": "v.",  "reasonable": "adj.",  "receipt": "n.",  "recession": "n.",
   "recite": "v.",  "reckless": "adj.",  "rectify": "v.",  "reduce": "v.",  "reef": "n.",
   "reference": "n.",  "refrigerator": "n.",  "refuge": "n.",  "regard": "n./v.",  "regime": "n.",
-  "regulation": "n.",  "relative": "n./adj.",  "reliable": "adj.",  "relieve": "v.",
+  "regulation": "n.",  "relative": "n./adv.",  "reliable": "adj.",  "relieve": "v.",
   "religion": "n.",  "reluctant": "adj.",  "remainder": "n.",  "remarkable": "adj.",
   "renaissance": "n.",  "reproach": "v./n.",  "reptile": "n.",  "republic": "n.",
   "resident": "n./adj.",  "respond": "v.",  "result": "n./v.",  "retire": "v.",  "revenue": "n.",

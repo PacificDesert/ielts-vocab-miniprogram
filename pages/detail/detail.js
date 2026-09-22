@@ -36,6 +36,11 @@ Page(flip.mixin({
     this.setData({ canSpeak: !!config.AUDIO_API && store.soundOn() });
   },
 
+  onHide() {
+    // 离开页面立刻停声
+    if (this.audio) this.audio.stop();
+  },
+
   syncTheme() {
     this.setData(getApp().themeData());
     if (this.data.w) this.show(this.data.index);

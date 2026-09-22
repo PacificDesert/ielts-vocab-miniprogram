@@ -42,14 +42,34 @@ Page(flip.mixin({
   onLoad() {
     // 拼写页也走有声模式：看到中文释义时先听一遍读音更有提示作用
     this.audio = config.AUDIO_API ? wx.createInnerAudioContext() : null;
-    if (this.audio) this.audio.onError(() => wx.showToast({ title: '发音加载失败', icon: 'none' }));
+    if (this.audio) {
+      // 音频源是网络地址，必须等 onCanplay 再 play，否则部分机型直接静默失败
+      this.audio.autoplay = false;
+      this.audio.onError(err => {
+        this.setData({ speaking: false });
+        wx.showToast({ title: '发音加载失败', icon: 'none' });
+        console.warn('[spell] audio error', err);
+      });
+      this.audio.onEnded(() => this.setData({ speaking: false }));
+    }
     this.again();
   },
 
   onShow() {
     this.setData(getApp().themeData());
     this.setData({ canSpeak: !!config.AUDIO_API && store.soundOn() });
-    if (!this.data.list.length) this.again();
+    if (!this.data.list.length) {
+      this.again();
+    } else if (this.data.canSpeak && this.data.cur && this.data.cur.w && !this.data.checked) {
+      // 从别的页面切回来，当前词还没作答 → 补读一遍
+      this.speakWord(this.data.cur.w);
+    }
+  },
+
+  onHide() {
+    // 离开页面立刻停声，免得在别的页面还在念
+    if (this.audio) this.audio.stop();
+    this.setData({ speaking: false });
   },
 
   onUnload() {
@@ -70,14 +90,21 @@ Page(flip.mixin({
     if (!this.audio || !this.soundOn() || !w) return;
     if (!keyword) this.audio.stop();
     this.audio.src = config.AUDIO_API + encodeURIComponent(w);
-    this.audio.play();
+    this.setData({ speaking: true });
+    try {
+      this.audio.play();
+    } catch (e) {
+      this.setData({ speaking: false });
+      console.warn('[spell] play failed', e);
+    }
+    // 兜底：onEnded 偶发不触发时把高亮状态收回来
+    clearTimeout(this._speakTimer);
+    this._speakTimer = setTimeout(() => this.setData({ speaking: false }), 4000);
   },
 
   /** 点题目卡上的喇叭：重听当前单词 */
   onSpeak() {
     this.speakWord(this.data.cur && this.data.cur.w);
-    this.setData({ speaking: true });
-    setTimeout(() => this.setData({ speaking: false }), 600);
   },
 
   syncTheme() {

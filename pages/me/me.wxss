@@ -1,5 +1,81 @@
 .danger { color: var(--red); }
 
+/* ==== 头像昵称卡片 ==== */
+.profile {
+  display: flex;
+  align-items: center;
+  margin: 8rpx 32rpx 40rpx;
+  padding: 32rpx;
+  background: var(--card);
+  border-radius: 24rpx;
+}
+
+/* 按钮要清掉小程序默认样式，否则会自带边框和背景 */
+.avatar-btn {
+  position: relative;
+  width: 128rpx;
+  height: 128rpx;
+  padding: 0;
+  margin: 0 28rpx 0 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  line-height: 1;
+  flex: none;
+  overflow: visible;
+}
+.avatar-btn::after { border: none; }
+
+.avatar {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 50%;
+  display: block;
+  background: var(--fill);
+}
+.avatar-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-ph-icon { font-size: 60rpx; color: var(--text3); }
+
+/* 右下角小铅笔，提示可更换 */
+.avatar-edit {
+  position: absolute;
+  right: -4rpx;
+  bottom: -4rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #FFFFFF;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid var(--card);
+}
+
+.profile-main { flex: 1; min-width: 0; }
+
+.nickname-input {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--text);
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0;
+  background: transparent;
+}
+.nickname-ph { color: var(--text3); font-weight: 400; font-size: 34rpx; }
+
+.profile-sub {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: var(--text2);
+}
+
 .check { font-size: 34rpx; color: var(--blue); font-weight: 500; }
 
 .plan-cell { align-items: center; }

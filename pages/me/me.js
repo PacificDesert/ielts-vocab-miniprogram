@@ -21,7 +21,8 @@ Page({
     cloud: false,
     syncText: '',
     syncAt: '',
-    total: 0
+    total: 0,
+    profile: { avatar: '', nickname: '' }
   },
 
   onShow() {
@@ -42,7 +43,8 @@ Page({
       planInput: String(plan.perRound),
       cloud: cloud.isReady(),
       syncText: cloud.isReady() ? '已开启' : '未配置云环境',
-      syncAt: this.formatSync(store.lastSync())
+      syncAt: this.formatSync(store.lastSync()),
+      profile: store.profile()
     });
   },
 
@@ -121,6 +123,31 @@ Page({
         wx.showToast({ title: '已重置', icon: 'none' });
       }
     });
+  },
+
+  /** 头像：微信只允许由 open-type="chooseAvatar" 的按钮触发，回调里拿到临时文件 */
+  onChooseAvatar(e) {
+    const url = e.detail && e.detail.avatarUrl;
+    if (!url) return;
+    // 临时路径重启后会失效，必须转成持久化文件（失败就退回临时路径，至少本次可见）
+    wx.getFileSystemManager().saveFile({
+      tempFilePath: url,
+      success: res => this.saveProfile({ avatar: res.savedFilePath }, '头像已更新'),
+      fail: () => this.saveProfile({ avatar: url }, '头像已更新（重启后可能失效）')
+    });
+  },
+
+  /** 昵称：type="nickname" 的输入框会在失焦/确认时带回微信昵称 */
+  onNickname(e) {
+    const name = String((e.detail && e.detail.value) || '').trim();
+    if (name === store.profile().nickname) return;
+    this.saveProfile({ nickname: name }, name ? '昵称已更新' : '已清空昵称');
+  },
+
+  saveProfile(patch, tip) {
+    const profile = store.setProfile(patch);
+    this.setData({ profile });
+    if (tip) wx.showToast({ title: tip, icon: 'none' });
   },
 
   onPrivacy() {

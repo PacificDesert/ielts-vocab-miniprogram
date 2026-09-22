@@ -13,6 +13,7 @@ const state = {
   spellCursor: 0,
   marks: {},
   days: {},
+  profile: { avatar: '', nickname: '' },
   updated: 0
 };
 
@@ -40,6 +41,8 @@ function load() {
   }
   delete state.plan.newPerDay;
   delete state.plan.spellPerDay;
+  // 老版本没有 profile 字段，补上默认值，避免页面取到 undefined
+  state.profile = Object.assign({ avatar: '', nickname: '' }, state.profile || {});
   state.plan.perRound = clampPlan(state.plan.perRound);
   return state;
 }
@@ -229,6 +232,24 @@ function soundOn() {
   return v === undefined ? !!config.DEFAULT_PLAN.sound : !!v;
 }
 
+/* ---------------- 头像昵称 ---------------- */
+
+/** 头像与昵称。微信只允许用户主动点击按钮授权，所以这里只负责存取，不做获取。 */
+function profile() {
+  return state.profile || { avatar: '', nickname: '' };
+}
+
+/** 只更新传入的字段；头像换了要连带刷新 updated，云端才知道该用谁的 */
+function setProfile(patch) {
+  const next = Object.assign({}, profile(), patch || {});
+  // 昵称限长，避免用户粘贴一整段进来撑破卡片
+  next.nickname = String(next.nickname || '').slice(0, 20);
+  state.profile = next;
+  save();
+  scheduleSync();
+  return next;
+}
+
 /* ---------------- 多设备同步 ---------------- */
 
 function lastSync() {
@@ -288,6 +309,16 @@ function mergeRemote(remote) {
   if ((remote.updated || 0) > (state.updated || 0) && remote.plan) {
     state.plan = Object.assign({}, config.DEFAULT_PLAN, remote.plan, { autoSync: state.plan.autoSync });
     state.plan.perRound = clampPlan(state.plan.perRound);
+    changed = true;
+  }
+  // 头像昵称跟随整体更新时间较新的一方，但空值不覆盖已有值
+  const rp = remote.profile || {};
+  if (rp.avatar && rp.avatar !== state.profile.avatar && (remote.updated || 0) > (state.updated || 0)) {
+    state.profile.avatar = rp.avatar;
+    changed = true;
+  }
+  if (rp.nickname && rp.nickname !== state.profile.nickname && (remote.updated || 0) > (state.updated || 0)) {
+    state.profile.nickname = rp.nickname;
     changed = true;
   }
   return changed;
@@ -358,6 +389,7 @@ module.exports = {
   markStudy, markSpell, nextLearnBatch, batchFrom, nextSpellBatch,
   setPlan, setPerRound, toggleExpand, toggleAutoSync, toggleSound, soundOn,
   perRound, clampPlan,
+  profile, setProfile,
   sync, scheduleSync, lastSync,
   push, pull, reset, MASTER_LV
 };

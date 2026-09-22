@@ -87,6 +87,16 @@ body.dark .side h1{color:#fff}
 .cell-sub{font-size:13px;color:var(--text2);margin-top:2px}
 .cell-value{font-size:15px;color:var(--text2);margin-left:8px}
 .chev{width:8px;height:8px;border-top:2px solid var(--text3);border-right:2px solid var(--text3);transform:rotate(45deg);margin-left:10px;flex:none}
+/* ==== 头像昵称卡片 ==== */
+.profile{display:flex;align-items:center;margin:6px 18px 26px;padding:18px;background:var(--card);border-radius:16px}
+.avatar-wrap{position:relative;margin-right:16px;flex:none}
+.avatar{width:64px;height:64px;border-radius:50%;display:block;background:var(--fill);object-fit:cover}
+.avatar-ph{display:flex;align-items:center;justify-content:center;font-size:30px}
+.avatar-edit{position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--card);cursor:pointer;line-height:1}
+.profile-main{flex:1;min-width:0;color:var(--text)}
+.nickname{font-size:20px;font-weight:600;color:var(--text);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nickname-ph{color:var(--text3);font-weight:400;font-size:17px}
+.profile-sub{margin-top:4px;font-size:13px;color:var(--text2)}
 .hero{padding:22px 18px 18px}
 .hero-row{display:flex;justify-content:space-between;text-align:center}
 .hero-num{font-size:26px;font-weight:600;letter-spacing:-.5px}
@@ -386,9 +396,15 @@ let S = load();
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // 老版本没有头像昵称字段，补上默认值
+      if (!s.avatar) s.avatar = '';
+      if (!s.nickname) s.nickname = '';
+      return s;
+    }
   } catch (e) {}
-  return { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: 20, showExpand: true, sound: true, theme: 'auto' };
+  return { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: 20, showExpand: true, sound: true, theme: 'auto', avatar: '', nickname: '' };
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
@@ -939,7 +955,8 @@ function prevTag(list, prevIdx, opts) {
 /* ——— 「选释义」选项生成（与 utils/word.js 的 options() 保持一致） ——— */
 const POS_LEAD = /^(n|adj|adv|v|vt|vi|prep|conj|pron|num|int|art|aux|abbr|ord)\.\s*/;
 /* 词库释义没写词性的 1210 个词，逐条人工标注（与 utils/word.js 同步） */
-const POS_MAP = {
+const POS_MAP = {  "myth": "n.",
+
   "Stuff": "n.",  "abandon": "v.",  "aboard": "adv./prep.",  "abortion": "n.",  "absorb": "v.",
   "academy": "n.",  "accommodation": "n.",  "accompany": "v.",  "accord": "v./n.",  "account": "n.",
   "accurate": "adj.",  "accuse": "v.",  "accustom": "v.",  "act": "n./v.",  "adequate": "adj.",
@@ -1023,7 +1040,7 @@ const POS_MAP = {
   "excavate": "v.",  "exceed": "v.",  "excessive": "adj.",  "execute": "v.",  "exercise": "n./v.",
   "exhale": "v.",  "exit": "n./v.",  "expand": "v.",  "expense": "n.",  "experiment": "n.",
   "experimental": "adj.",  "explain": "v.",  "explosion": "n.",  "exponent": "n.",  "extent": "n.",
-  "exterior": "n./adj.",  "extinction": "n.",  "extravagant": "adj.",  "fabric": "n.",
+  "exterior": "n./adv.",  "extinction": "n.",  "extravagant": "adj.",  "fabric": "n.",
   "facility": "n.",  "fade": "v.",  "failure": "n.",  "fair": "adj.",  "fan": "n./v.",
   "fare": "n.",  "farewell": "int./n.",  "fashion": "n./v.",  "fatal": "adj.",  "fault": "n./v.",
   "federal": "adj.",  "fee": "n.",  "fellowship": "n.",  "female": "n./adj.",  "fence": "n.",
@@ -1078,9 +1095,9 @@ const POS_MAP = {
   "majesty": "n.",  "mammal": "n.",  "manifest": "v.",  "manly": "adj.",  "manoeuvre": "n.",
   "mansion": "n.",  "mantle": "n.",  "manual": "n./adj.",  "marathon": "n.",  "marble": "n.",
   "marine": "adj./n.",  "mason": "n.",  "massacre": "n.",  "massive": "adj.",  "master": "n./v.",
-  "mat": "n.",  "material": "n./adj.",  "materialism": "n.",  "maximal": "adj.",  "mean": "n./adj.",
+  "mat": "n.",  "material": "n./adj.",  "materialism": "n.",  "maximal": "adj.",  "mean": "n./adv.",
   "meanwhile": "adv.",  "mechanic": "n.",  "medical": "adj.",  "medieval": "adj.",
-  "medium": "n./adj.",  "melon": "n.",  "melt": "v.",  "merchandise": "n.",  "mercy": "n.",
+  "medium": "n./adv.",  "melon": "n.",  "melt": "v.",  "merchandise": "n.",  "mercy": "n.",
   "merry": "adj.",  "mess": "v./n.",  "messenger": "n.",  "metabolism": "n.",  "microbe": "n.",
   "microcomputer": "n.",  "midst": "n.",  "mild": "adj.",  "military": "adj.",  "milkshake": "n.",
   "million": "num.",  "mineral": "n.",  "minimal": "adj.",  "minister": "n.",  "mint": "n./v.",
@@ -1091,7 +1108,7 @@ const POS_MAP = {
   "nap": "n.",  "nasty": "adj.",  "nation": "n.",  "necessity": "n.",  "neck": "n.",
   "needle": "n.",  "neglect": "v.",  "negotiation": "n.",  "nerve": "n.",  "network": "n.",
   "nobility": "n.",  "norm": "n.",  "notify": "v.",  "nourish": "v.",  "nursery": "n./adj.",
-  "oar": "n./v.",  "oasis": "n.",  "obey": "v.",  "objective": "n./adj.",  "observatory": "n.",
+  "oar": "n./v.",  "oasis": "n.",  "obey": "v.",  "objective": "n./adv.",  "observatory": "n.",
   "observe": "v.",  "occupation": "n.",  "ocean": "n.",  "offend": "v.",  "offer": "v./n.",
   "offspring": "n.",  "operation": "n.",  "opinion": "n.",  "optimal": "adj.",  "orbit": "n.",
   "organism": "n.",  "outcome": "n.",  "outfit": "n./v.",  "outlook": "n.",  "outward": "adj./adv.",
@@ -1110,7 +1127,7 @@ const POS_MAP = {
   "popularity": "n.",  "population": "n.",  "porcelain": "n.",  "porch": "n.",  "pore": "n./v.",
   "porridge": "n.",  "portfolio": "n.",  "portrait": "n.",  "postage": "n.",  "precise": "adj.",
   "predator": "n.",  "preference": "n.",  "prejudice": "n.",  "premier": "n./adj.",
-  "prepare": "v.",  "prerequisite": "n./adj.",  "presentation": "n.",  "president": "n.",
+  "prepare": "v.",  "prerequisite": "n./adv.",  "presentation": "n.",  "president": "n.",
   "press": "n.",  "prestige": "n.",  "presume": "v.",  "pretend": "v.",  "prevail": "v.",
   "prevent": "v.",  "prey": "n./v.",  "primary": "adj.",  "primate": "n.",  "prince": "n.",
   "prison": "n.",  "private": "adj.",  "privilege": "n.",  "prize": "n./v.",  "productive": "adj.",
@@ -1126,7 +1143,7 @@ const POS_MAP = {
   "react": "v.",  "reap": "v.",  "reasonable": "adj.",  "receipt": "n.",  "recession": "n.",
   "recite": "v.",  "reckless": "adj.",  "rectify": "v.",  "reduce": "v.",  "reef": "n.",
   "reference": "n.",  "refrigerator": "n.",  "refuge": "n.",  "regard": "n./v.",  "regime": "n.",
-  "regulation": "n.",  "relative": "n./adj.",  "reliable": "adj.",  "relieve": "v.",
+  "regulation": "n.",  "relative": "n./adv.",  "reliable": "adj.",  "relieve": "v.",
   "religion": "n.",  "reluctant": "adj.",  "remainder": "n.",  "remarkable": "adj.",
   "renaissance": "n.",  "reproach": "v./n.",  "reptile": "n.",  "republic": "n.",
   "resident": "n./adj.",  "respond": "v.",  "result": "n./v.",  "retire": "v.",  "revenue": "n.",
@@ -1622,8 +1639,21 @@ function vMatch() {
 
 function vMe() {
   const st = stats();
+  const nick = (S.nickname || '').trim();
   return '<div class="h1">我的</div>'
-    + '<div class="h2">' + st.learned + ' / ' + st.total + ' 词已学习 · 正确率 ' + st.accuracy + '%</div>'
+    + '<div class="profile">'
+    +   '<div class="avatar-wrap">'
+    +     (S.avatar
+            ? '<img class="avatar" src="' + esc(S.avatar) + '" alt="">'
+            : '<div class="avatar avatar-ph">👤</div>')
+    +     '<div class="avatar-edit" data-act="pickAvatar">✎</div>'
+    +   '</div>'
+    +   '<div class="profile-main">'
+    +     '<div class="nickname' + (nick ? '' : ' nickname-ph') + '" data-act="editNick">'
+    +       (nick ? esc(nick) : '点击设置昵称') + '</div>'
+    +     '<div class="profile-sub">' + st.learned + ' / ' + st.total + ' 词已学习 · 正确率 ' + st.accuracy + '%</div>'
+    +   '</div>'
+    + '</div>'
     + '<div class="group"><div class="card">'
     + '<div class="cell"><div class="cell-main"><div class="cell-title">已学单词</div></div><div class="cell-value">' + st.learned + '</div></div>'
     + '<div class="cell"><div class="cell-main"><div class="cell-title">已掌握</div></div><div class="cell-value">' + st.mastered + '</div></div>'
@@ -1940,6 +1970,28 @@ function act(a, el) {
     toast(soundOn() ? '有声模式' : '静音模式');
     return;
   }
+  /* 预览端没有微信授权，头像用文件选择器、昵称用 prompt 模拟 */
+  if (a === 'pickAvatar') {
+    const f = document.createElement('input');
+    f.type = 'file';
+    f.accept = 'image/*';
+    f.onchange = () => {
+      const file = f.files && f.files[0];
+      if (!file) return;
+      const r = new FileReader();
+      r.onload = () => { S.avatar = r.result; save(); render(); toast('头像已更新'); };
+      r.readAsDataURL(file);
+    };
+    f.click();
+    return;
+  }
+  if (a === 'editNick') {
+    const v = window.prompt('设置昵称（最多 20 字）', S.nickname || '');
+    if (v === null) return;
+    S.nickname = String(v).trim().slice(0, 20); save(); render();
+    toast(S.nickname ? '昵称已更新' : '已清空昵称');
+    return;
+  }
   if (a === 'speak') return speak(w.w);
   if (a === 'clrq') { cur.keyword = ''; return render(); }
   if (a === 'hint') { spell.reveal = Math.min(2, (spell.reveal || 0) + 1); return render(); }
@@ -1958,7 +2010,7 @@ function act(a, el) {
   if (a === 'syncNow') return toast('预览里没有云环境，真机配置后可用');
   if (a === 'about') return toast('3328 词 · 22 章节 · 3000+ 条书中例句');
   if (a === 'reset') {
-    S = { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: S.plan, showExpand: S.showExpand, sound: S.sound, theme: S.theme };
+    S = { marks: {}, days: {}, cursor: 0, spellCursor: 0, plan: S.plan, showExpand: S.showExpand, sound: S.sound, theme: S.theme, avatar: S.avatar, nickname: S.nickname };
     save(); return render();
   }
 }

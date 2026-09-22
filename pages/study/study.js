@@ -61,6 +61,11 @@ Page(flip.mixin({
     }
   },
 
+  onHide() {
+    // 跳到别的页面立刻停声，避免在拓展页/详情页还在念上一个词
+    if (this.audio) this.audio.stop();
+  },
+
   onShow() {
     this.setData(getApp().themeData());
     // 从拓展页返回时，用户在「我的」里改过有声模式，回来立刻生效

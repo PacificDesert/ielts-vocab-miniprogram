@@ -1,6 +1,28 @@
 <view class="page {{themeClass}}">
   <view class="h1">我的</view>
-  <view class="h2">{{stats.learned}} / {{total}} 词已学习 · 正确率 {{stats.accuracy}}%</view>
+
+  <!-- 头像昵称：微信新规下必须由用户主动点击按钮授权，不能自动获取 -->
+  <view class="profile">
+    <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+      <image class="avatar" src="{{profile.avatar}}" mode="aspectFill" wx:if="{{profile.avatar}}" />
+      <view class="avatar avatar-ph" wx:else>
+        <text class="avatar-ph-icon">👤</text>
+      </view>
+      <view class="avatar-edit">✎</view>
+    </button>
+    <view class="profile-main">
+      <input
+        class="nickname-input"
+        type="nickname"
+        value="{{profile.nickname}}"
+        placeholder="点击设置昵称"
+        placeholder-class="nickname-ph"
+        bindblur="onNickname"
+        bindchange="onNickname"
+      />
+      <view class="profile-sub">{{stats.learned}} / {{total}} 词已学习 · 正确率 {{stats.accuracy}}%</view>
+    </view>
+  </view>
 
   <view class="group">
     <view class="card">

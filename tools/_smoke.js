@@ -624,5 +624,92 @@ ok('预览端 POS_MAP 已同步为全量（>=1200 条）',
   (html.match(/"(?:[a-z ]+|Stuff)": "(?:n|adj|adv|v|num|int)\./g) || []).length >= 1200,
   (html.match(/"(?:[a-z ]+|Stuff)": "(?:n|adj|adv|v|num|int)\./g) || []).length + ' 条');
 
+/* 释义里夹带的 OCR 字母碎片（本轮又清掉一批：track ' V. / lag . V. / dwarf ac /
+   butterfly at / print r / memorial ac / company IJ 等） */
+const innerJunk = words.filter(w => {
+  const s = String(w.cn || '');
+  // 汉字后紧跟 1-3 个字母再跟汉字，且不是合法的词性标记（如 "的 n. 协议"）
+  const hit = s.match(/[\u4e00-\u9fa5]\s*[a-zA-Z]{1,3}[.．\/]?\s*[\u4e00-\u9fa5]/g) || [];
+  return hit.some(h => {
+    if (/[\u4e00-\u9fa5]\s*(n|adj|adv|v|vt|vi|prep|conj|pron|num|int|art|aux|abbr|ord)\./.test(h)) return false;
+    // 单个大写字母后跟汉字的合法写法（X 射线 / T 恤）不算碎片
+    if (/^[\u4e00-\u9fa5]\s*[A-Z]\s+[\u4e00-\u9fa5]$/.test(h)) return false;
+    return true;
+  });
+});
+ok('释义正文无 OCR 字母碎片', innerJunk.length === 0,
+  innerJunk.length + ' 条：' + innerJunk.slice(0, 6).map(w => w.w + '=' + w.cn).join(' | '));
+
+/* 本轮定点修正的几个词，防止回退 */
+const spot = {
+  law: '法律；规律；定理',
+  track: 'v. 追踪；跟踪 n. 足迹，踪迹；轨道',
+  lag: 'v. 落后 n. 间隔，时间差',
+  butterfly: 'n. 蝴蝶；蝶状的',
+  dwarf: 'n. （童话中的）小矮人；侏儒 adj. 矮小的',
+  print: 'v. 打印 n. 印刷品；（冲印出来的）照片',
+  memorial: 'n. 纪念碑 adj. 纪念的，悼念的',
+  company: 'n. 公司；陪伴；剧团'
+};
+const spotBad = Object.keys(spot).filter(k => {
+  const w = words.find(x => x.w === k);
+  return !w || String(w.cn).trim() !== spot[k];
+});
+ok('定点修正的释义未被回退', spotBad.length === 0, spotBad.join(', '));
+
+/* mean/medium/objective/prerequisite/relative/exterior 的词性本轮由 n./adj. 改为 n./adv. */
+const advFix = ['mean', 'medium', 'objective', 'prerequisite', 'relative', 'exterior'];
+const advBad = advFix.filter(k => (POS_MAP[k] || '').indexOf('adv') < 0);
+ok('内联词性为 adv. 的词已修正 POS_MAP', advBad.length === 0, advBad.join(', '));
+
+console.log('\n[15] 头像昵称（「我的」页）');
+const storeJs = fs.readFileSync(path.join(__dirname, '..', 'utils', 'store.js'), 'utf8');
+const meJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'me', 'me.js'), 'utf8');
+const meWxml = fs.readFileSync(path.join(__dirname, '..', 'pages', 'me', 'me.wxml'), 'utf8');
+const meWxss = fs.readFileSync(path.join(__dirname, '..', 'pages', 'me', 'me.wxss'), 'utf8');
+
+ok('store 暴露 profile / setProfile', /profile,\s*setProfile,/.test(storeJs));
+ok('store 有 profile 默认值', /profile:\s*\{\s*avatar:\s*'',\s*nickname:\s*''\s*\}/.test(storeJs));
+ok('老版本数据补 profile 默认值', /state\.profile\s*=\s*Object\.assign/.test(storeJs));
+ok('setProfile 对昵称限长', /\.slice\(0,\s*20\)/.test(storeJs));
+ok('setProfile 会触发同步', /function setProfile[\s\S]{0,400}scheduleSync\(\)/.test(storeJs));
+
+// 微信新规：头像必须 chooseAvatar 按钮，昵称必须 type="nickname"
+ok('头像用 open-type="chooseAvatar"', /open-type="chooseAvatar"/.test(meWxml));
+ok('头像绑定了 bindchooseavatar', /bindchooseavatar="onChooseAvatar"/.test(meWxml));
+ok('昵称输入框 type="nickname"', /type="nickname"/.test(meWxml));
+ok('me.js 处理头像回调并持久化', /saveFile\s*\(/.test(meJs) && /tempFilePath:\s*url/.test(meJs));
+ok('me.js 处理昵称回调', /onNickname\s*\(/.test(meJs));
+ok('按钮默认样式已清掉（::after 边框）', /\.avatar-btn::after\s*\{\s*border:\s*none/.test(meWxss));
+ok('头像昵称跟随主题变量', /\.profile\s*\{[\s\S]*?var\(--card\)/.test(meWxss) && /\.nickname-input[\s\S]*?var\(--text\)/.test(meWxss));
+
+console.log('\n[16] 有声模式（发音链路）');
+const spellJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'spell', 'spell.js'), 'utf8');
+const studyJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'study', 'study.js'), 'utf8');
+const detailJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'detail', 'detail.js'), 'utf8');
+const expandJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'expand', 'expand.js'), 'utf8');
+const cfgSrc = fs.readFileSync(path.join(__dirname, '..', 'config.js'), 'utf8');
+
+ok('config 配了发音接口', /AUDIO_API:\s*'https:\/\//.test(cfgSrc));
+ok('静音开关默认开', /sound:\s*true/.test(cfgSrc));
+
+// 静音时不能出声：四个页面的 guard 都要走 store.soundOn()
+ok('拼写页静音时不出声', /if \(!this\.audio \|\| !this\.soundOn\(\) \|\| !w\) return;/.test(spellJs));
+['study', 'detail', 'expand'].forEach(p => {
+  const src = { study: studyJs, detail: detailJs, expand: expandJs }[p];
+  ok(p + ' 页有声模式走 store.soundOn', /store\.soundOn\(\)/.test(src));
+  ok(p + ' 页离开时停声（onHide）', /onHide\(\)\s*\{[\s\S]{0,160}?audio\.stop\(\)/.test(src));
+});
+ok('拼写页离开时停声（onHide）', /onHide\(\)\s*\{[\s\S]{0,160}?audio\.stop\(\)/.test(spellJs));
+
+// 音频必须处理 onEnded / onError，否则高亮状态会一直亮着
+ok('拼写页监听 onEnded 收起高亮', /onEnded\(\(\)\s*=>\s*this\.setData\(\{\s*speaking:\s*false/.test(spellJs));
+ok('拼写页 onError 会提示并收起高亮', /onError\(err\s*=>\s*\{[\s\S]{0,200}?speaking:\s*false/.test(spellJs));
+ok('拼写页有兜底定时器收回高亮', /_speakTimer/.test(spellJs));
+ok('拼写页 play 包了 try/catch', /try\s*\{\s*this\.audio\.play\(\)/.test(spellJs));
+
+// 从别的页面切回来，未作答时应补读
+ok('拼写页 onShow 补读当前词', /onShow\(\)\s*\{[\s\S]{0,400}?this\.speakWord\(this\.data\.cur\.w\)/.test(spellJs));
+
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);
