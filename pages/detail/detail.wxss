@@ -73,8 +73,65 @@
 .cn-card { padding: 32rpx; }
 .cn { font-size: 34rpx; line-height: 1.6; }
 .ex-card { padding: 32rpx; }
-.ex-en { font-size: 32rpx; line-height: 1.6; }
+
+/* 例句：逐词可点查义。命中词库的词给下划虚线做可点提示，不在库的词也照点（会提示） */
+.ex-en { font-size: 32rpx; line-height: 1.75; }
+.ex-tok { white-space: pre-wrap; }
+.ex-bold { font-weight: 700; color: var(--blue); }
+.ex-hit {
+  color: var(--text);
+  border-bottom: 2rpx dashed var(--text3);
+  padding-bottom: 1rpx;
+}
+.ex-plain { color: var(--text); }
+.group-hint {
+  font-size: 22rpx;
+  color: var(--text3);
+  font-weight: 400;
+  margin-left: 12rpx;
+}
 .ex-zh { font-size: 28rpx; color: var(--text2); line-height: 1.6; margin-top: 16rpx; }
+
+/* 点词弹层 */
+.pop-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 56rpx;
+  z-index: 90;
+}
+.pop {
+  width: 100%;
+  max-height: 76vh;
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: 28rpx;
+  padding: 36rpx 36rpx 28rpx;
+  box-sizing: border-box;
+}
+.pop-head { display: flex; align-items: center; justify-content: space-between; }
+.pop-title { font-size: 42rpx; font-weight: 600; color: var(--text); }
+.pop-speak { width: 60rpx; height: 60rpx; border-radius: 50%; background: var(--speak-bg); display: flex; align-items: center; justify-content: center; flex: none; }
+.pop-ph { font-size: 27rpx; color: var(--text2); margin-top: 8rpx; }
+.pop-cn { font-size: 31rpx; line-height: 1.6; color: var(--text); margin-top: 18rpx; }
+.pop-ex { margin-top: 22rpx; padding-top: 20rpx; border-top: 2rpx solid var(--line); }
+.pop-ex-en { font-size: 27rpx; line-height: 1.6; color: var(--text2); }
+.pop-ex-zh { font-size: 25rpx; line-height: 1.6; color: var(--text3); margin-top: 8rpx; }
+.pop-actions { display: flex; gap: 20rpx; margin-top: 30rpx; }
+.pop-btn {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 18rpx;
+  font-size: 30rpx;
+  background: var(--fill);
+  color: var(--text);
+}
+.pop-btn-main { background: var(--blue); color: #fff; }
 .dr-cn { max-width: 60%; text-align: right; }
 .gap { margin-top: 20rpx; }
 .pager {

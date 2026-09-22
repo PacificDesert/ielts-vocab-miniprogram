@@ -13,6 +13,8 @@ Page(flip.mixin({
     ch: '',
     lv: 0,
     ex: null,
+    exToks: [],
+    popWord: null,
     dr: [],
     card: {},
     canSpeak: !!config.AUDIO_API,
@@ -58,14 +60,17 @@ Page(flip.mixin({
   show(i) {
     const it = this.list[i];
     if (!it) return;
+    const ex = word.example(it);
     this.setData({
       index: i,
       w: it.w,
       ph: it.ph,
-      cn: it.cn,
+      cn: word.cnText(it.cn, it.w),
       ch: it.ch,
       lv: store.status(it.w),
-      ex: word.example(it),
+      ex,
+      // 例句切词：每个英文词都能点开查义（见 exClickable）
+      exToks: ex ? word.exClickable(ex.en, it.w) : [],
       dr: it.dr || [],
       card: word.card(it.ch, it.w, this.data.dark),
       sound: store.soundOn()
@@ -100,6 +105,54 @@ Page(flip.mixin({
   onExpand() {
     wx.navigateTo({ url: '/pages/expand/expand?w=' + encodeURIComponent(this.data.w) + '&from=detail' });
   },
+
+  /**
+   * 点例句里的单词看释义。
+   * 词库里有 → 弹层显示音标/释义，并给「查看详情 / 发音」；
+   * 不在词库 → 只提示，不乱查（免得给出不相干的释义）。
+   */
+  onExWord(e) {
+    const i = e.currentTarget.dataset.i;
+    const tok = this.data.exToks[i];
+    if (!tok || !tok.w) return;
+    if (!tok.it) {
+      wx.showToast({ title: '「' + tok.w + '」不在本词库', icon: 'none' });
+      return;
+    }
+    const it = tok.it;
+    this.setData({
+      popWord: {
+        w: it.w,
+        ph: it.ph || '',
+        cn: word.cnText(it.cn, it.w),
+        ex: it.ex && it.ex[0] ? word.exText(it.ex[0]) : '',
+        exZh: it.ex && it.ex[1] ? it.ex[1] : ''
+      }
+    });
+  },
+
+  closePop() {
+    this.setData({ popWord: null });
+  },
+
+  /** 弹层里的发音 */
+  popSpeak() {
+    const p = this.data.popWord;
+    if (p) this.speakWord(p.w);
+  },
+
+  /** 弹层里跳到该词的详情页 */
+  popDetail() {
+    const p = this.data.popWord;
+    if (!p) return;
+    this.closePop();
+    const i = this.list.findIndex(it => it.w === p.w);
+    if (i < 0) return;
+    this.turnTo('next', () => this.show(i));
+  },
+
+  /** 阻止点弹层本体时穿透关闭 */
+  noop() {},
 
   markKnown() {
     store.markStudy(this.data.w, true);

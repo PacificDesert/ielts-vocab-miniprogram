@@ -314,8 +314,27 @@ body.dark .side h1{color:#fff}
 .dsec-t{font-size:15px;font-weight:500;margin-bottom:6px}
 .dsec-p{font-size:13.5px;line-height:1.75;color:var(--text);margin-bottom:4px}
 .ex-card{padding:16px 18px}
-.ex-en{font-size:15px;line-height:1.6}
+.ex-en{font-size:15px;line-height:1.75}
+.ex-hit{color:var(--text);border-bottom:1px dashed var(--text3);cursor:pointer;padding-bottom:1px}
+.ex-hit:hover{color:var(--blue);border-bottom-color:var(--blue)}
+.ex-strong{font-weight:700;color:var(--blue)}
+.group-hint{font-size:11px;color:var(--text3);font-weight:400;margin-left:6px}
 .ex-zh{font-size:13px;color:var(--text2);line-height:1.6;margin-top:8px}
+
+/* 例句点词弹层 */
+.pop-mask{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:0 22px;z-index:60}
+.pop-box{width:100%;max-height:76%;overflow-y:auto;background:var(--card);border-radius:14px;padding:18px 18px 14px;box-sizing:border-box;color:var(--text)}
+.pop-head{display:flex;align-items:center;justify-content:space-between}
+.pop-title{font-size:21px;font-weight:600}
+.pop-ph{font-size:13px;color:var(--text2);margin-top:4px}
+.pop-cn{font-size:15.5px;line-height:1.6;margin-top:9px}
+.pop-exbox{margin-top:11px;padding-top:10px;border-top:1px solid var(--line)}
+.pop-ex-en{font-size:13px;line-height:1.6;color:var(--text2)}
+.pop-ex-zh{font-size:12.5px;line-height:1.6;color:var(--text3);margin-top:4px}
+.pop-actions{display:flex;gap:10px;margin-top:15px}
+.pop-btn{flex:1;height:42px;line-height:42px;text-align:center;border-radius:9px;font-size:15px;background:var(--fill);color:var(--text);cursor:pointer}
+.pop-btn:active{opacity:.7}
+.pop-btn-main{background:var(--blue);color:#fff}
 .dr-cn{font-size:13px;color:var(--text2);max-width:58%;text-align:right}
 .stepper{display:flex;align-items:center;background:var(--fill);border-radius:8px;overflow:hidden;flex:none}
 .step{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--blue);cursor:pointer;user-select:none}
@@ -350,6 +369,7 @@ body.dark .side h1{color:#fff}
     <div class="screen" id="screen"></div>
     <div class="tabbar" id="tabbar"></div>
     <div class="toast" id="toast"></div>
+    <div class="pop-mask" id="pop" style="display:none"></div>
   </div>
 
   <div class="side">
@@ -719,6 +739,78 @@ function exParts(sentence, w) {
   return out;
 }
 
+/* ---- 例句点词查义（与 utils/word.js 的 exTokens / lookup / exClickable 保持一致） ---- */
+
+/** 屈折形式 → 原形，由 inflections() + IRREGULAR 反向构建 */
+const LEMMA_MAP = (() => {
+  const map = {};
+  const put = (form, base) => {
+    if (!form || !base || form === base) return;
+    if (!map[form]) map[form] = [];
+    if (map[form].indexOf(base) < 0) map[form].push(base);
+  };
+  WORDS.forEach(it => {
+    const base = String(it.w || '').toLowerCase();
+    if (!base) return;
+    inflections(base).forEach(f => put(f, base));
+    const irr = IRREGULAR[base];
+    if (irr) irr.forEach(f => put(String(f).toLowerCase(), base));
+  });
+  return map;
+})();
+
+/** 例句切词：返回 [{ t, w, sp }] */
+function exTokens(sentence) {
+  const text = exText(sentence);
+  if (!text) return [];
+  const out = [];
+  const re = /(\s*)([A-Za-z]+(?:[’'][A-Za-z]+)*(?:-[A-Za-z]+)*|[0-9][0-9.,]*|[^A-Za-z0-9]+)/g;
+  let m;
+  while ((m = re.exec(text))) {
+    const sp = m[1] || '';
+    const tok = m[2];
+    if (!/^[A-Za-z0-9]/.test(tok)) { out.push({ t: sp + tok, w: '', sp }); continue; }
+    let head = '', tail = '', core = tok;
+    const hm = /^[^A-Za-z]+/.exec(core);
+    if (hm) { head = hm[0]; core = core.slice(head.length); }
+    const tm = /[^A-Za-z]+$/.exec(core);
+    if (tm) { tail = tm[0]; core = core.slice(0, -tail.length); }
+    if (head) out.push({ t: sp + head, w: '', sp });
+    if (core) out.push({ t: (head ? '' : sp) + core, w: core, sp: head ? '' : sp });
+    if (tail) out.push({ t: tail, w: '', sp: '' });
+  }
+  return out;
+}
+
+/** 查词：优先原形，其次屈折形式 */
+function lookupWord(raw) {
+  const key = String(raw === undefined || raw === null ? '' : raw).trim().toLowerCase();
+  if (!key) return null;
+  const hit = byWord[key];
+  if (hit) return hit;
+  const noApos = key.replace(/[’']s?$/, '');
+  if (noApos && noApos !== key && byWord[noApos]) return byWord[noApos];
+  const cands = LEMMA_MAP[key];
+  if (!cands || !cands.length) return null;
+  const inLib = cands.filter(c => byWord[c]);
+  if (!inLib.length) return null;
+  inLib.sort((a, b) => b.length - a.length || a.localeCompare(b));
+  return byWord[inLib[0]];
+}
+
+/** 例句切成可点词片段 */
+function exClickable(sentence, w) {
+  const out = [];
+  exParts(sentence, w).forEach(p => {
+    if (p.b) { out.push({ t: p.t, w: '', it: null, bold: true }); return; }
+    exTokens(p.t).forEach(tk => {
+      if (!tk.w) { out.push({ t: tk.t, w: '', it: null, bold: false }); return; }
+      out.push({ t: tk.t, w: tk.w, it: lookupWord(tk.w), bold: false });
+    });
+  });
+  return out;
+}
+
 /** 自动发音：静音模式下什么都不做 */
 let speakingTimer = null;
 function say(text) {
@@ -735,6 +827,39 @@ function flashSpeak(el) {
     if (s && s.querySelectorAll) s.querySelectorAll('.ex-speak.on,.quiz-speak.on').forEach(x => x.classList.remove('on'));
     if (el.classList) el.classList.remove('on');
   }, 600);
+}
+
+/*
+ * 例句点词弹层。挂在 #phone 里（绝对定位盖住屏幕），
+ * 不放进 #screen —— 那样每次 render() 都会被清掉。
+ */
+let popWord = null;
+function openPop(it) {
+  popWord = it;
+  const box = $('pop');
+  if (!box) return;
+  box.style.display = 'flex';
+  box.innerHTML = '<div class="pop-box">'
+    + '<div class="pop-head"><div class="pop-title">' + esc(it.w) + '</div>'
+    + (soundOn() ? '<span class="wc-spk" data-act="popspeak"' + speakerGlyph() + '</span>' : '')
+    + '</div>'
+    + (it.ph ? '<div class="pop-ph">' + esc(it.ph) + '</div>' : '')
+    + '<div class="pop-cn">' + esc(it.cn) + '</div>'
+    + (it.ex && it.ex[0] ? '<div class="pop-exbox"><div class="pop-ex-en">' + esc(exText(it.ex[0])) + '</div>'
+        + (it.ex[1] ? '<div class="pop-ex-zh">' + esc(it.ex[1]) + '</div>' : '') + '</div>' : '')
+    + '<div class="pop-actions">'
+    + '<div class="pop-btn" data-act="popclose">关闭</div>'
+    + '<div class="pop-btn pop-btn-main" data-act="popdetail">查看详情</div>'
+    + '</div></div>';
+  /* 点空白处关闭，点内容区不关 */
+  box.onclick = ev => { if (ev.target === box) closePop(); };
+  bind(box);
+  if (soundOn()) speak(it.w);
+}
+function closePop() {
+  popWord = null;
+  const box = $('pop');
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; box.onclick = null; }
 }
 
 const ICONS = {
@@ -1334,8 +1459,14 @@ function cardHtml(w) {
 }
 function exBlock(w) {
   if (!w.ex) return '';
-  return '<div class="group"><div class="group-title">书中例句</div><div class="card ex-card">'
-    + '<div class="ex-en">' + esc(w.ex[0]) + '</div>'
+  const toks = exClickable(w.ex[0], w.w);
+  return '<div class="group"><div class="group-title">书中例句'
+    + '<span class="group-hint">点单词查释义</span>'
+    + '</div><div class="card ex-card">'
+    + '<div class="ex-en">' + toks.map((t, i) => {
+        if (!t.w) return t.bold ? '<b class="ex-strong">' + esc(t.t) + '</b>' : '<span>' + esc(t.t) + '</span>';
+        return '<span class="ex-hit" data-exw="' + i + '">' + esc(t.t) + '</span>';
+      }).join('') + '</div>'
     + (w.ex[1] ? '<div class="ex-zh">' + esc(w.ex[1]) + '</div>' : '')
     + '</div></div>';
 }
@@ -1782,6 +1913,24 @@ function bind(s) {
 function act(a, el) {
   el = el || {};
   const w = cur.word;
+  if (a === 'exw') {
+    const i = Number(el.dataset.exw);
+    const toks = w && w.ex ? exClickable(w.ex[0], w.w) : [];
+    const tk = toks[i];
+    if (!tk || !tk.w) return;
+    if (!tk.it) { toast('「' + tk.w + '」不在本词库'); return; }
+    return openPop(tk.it);
+  }
+  if (a === 'popclose') return closePop();
+  if (a === 'popdetail') {
+    const p = popWord;
+    closePop();
+    if (!p) return;
+    /* 目标词可能是屈折形式，onEx 里存的是词库条目本身 */
+    cur.word = p;
+    return show('detail', cur.back);
+  }
+  if (a === 'popspeak') { if (popWord) speak(popWord.w); return; }
   if (a === 'learn') {
     cur.startIdx = -1;
     study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false, opts: [], optsWord: '', picked: false };

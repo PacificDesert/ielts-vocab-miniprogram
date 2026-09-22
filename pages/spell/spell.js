@@ -40,7 +40,10 @@ Page(flip.mixin({
   },
 
   onLoad() {
-    // 拼写页也走有声模式：看到中文释义时先听一遍读音更有提示作用
+    /*
+     * 拼写页可以发音，但**只在用户主动点喇叭时**（onSpeak）。
+     * 自动朗读会在看到中文释义的同时把英文读出来 —— 那是答案。
+     */
     this.audio = config.AUDIO_API ? wx.createInnerAudioContext() : null;
     if (this.audio) {
       // 音频源是网络地址，必须等 onCanplay 再 play，否则部分机型直接静默失败
@@ -60,10 +63,12 @@ Page(flip.mixin({
     this.setData({ canSpeak: !!config.AUDIO_API && store.soundOn() });
     if (!this.data.list.length) {
       this.again();
-    } else if (this.data.canSpeak && this.data.cur && this.data.cur.w && !this.data.checked) {
-      // 从别的页面切回来，当前词还没作答 → 补读一遍
-      this.speakWord(this.data.cur.w);
     }
+    /*
+     * 拼写页**不自动朗读**：拼写的任务是「看中文写英文」，
+     * 一进页面就念出读音等于把答案报出来，等于送分。
+     * 想听的自己点卡上的小喇叭（onSpeak），那是主动行为。
+     */
   },
 
   onHide() {
@@ -139,10 +144,8 @@ Page(flip.mixin({
       reveal: 0,
       canSpeak: !!config.AUDIO_API && store.soundOn(),
       mask: buildMask(cur.w || '', 0)
-    }, () => {
-      // 有声模式：每换一个词先读一遍读音
-      if (this.data.canSpeak && cur.w) this.speakWord(cur.w);
     });
+    // 换词时**不自动朗读**（原因见 onShow）：想听的点卡上的小喇叭
   },
 
   onInput(e) {

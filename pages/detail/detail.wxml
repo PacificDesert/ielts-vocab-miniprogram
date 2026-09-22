@@ -30,9 +30,16 @@
     </view>
 
     <view class="group" wx:if="{{ex}}">
-      <view class="group-title">书中例句</view>
+      <view class="group-title">书中例句<text class="group-hint" wx:if="{{exToks.length}}">点单词查释义</text></view>
       <view class="card ex-card">
-        <view class="ex-en">{{ex.en}}</view>
+        <view class="ex-en">
+          <block wx:for="{{exToks}}" wx:key="index">
+            <text wx:if="{{!item.w}}" class="ex-tok">{{item.t}}</text>
+            <text wx:elif="{{item.bold}}" class="ex-tok ex-bold">{{item.t}}</text>
+            <text wx:elif="{{item.it}}" class="ex-tok ex-hit" data-i="{{index}}" catchtap="onExWord">{{item.t}}</text>
+            <text wx:else class="ex-tok ex-plain" data-i="{{index}}" catchtap="onExWord">{{item.t}}</text>
+          </block>
+        </view>
         <view class="ex-zh" wx:if="{{ex.zh}}">{{ex.zh}}</view>
       </view>
     </view>
@@ -60,5 +67,27 @@
     <view class="pager-btn" hover-class="btn-hover" bindtap="prev">‹ 上一个</view>
     <view class="pager-idx">{{index + 1}} / {{total}}</view>
     <view class="pager-btn" hover-class="btn-hover" bindtap="next">下一个 ›</view>
+  </view>
+
+  <!-- 例句点词弹层 -->
+  <view class="pop-mask" wx:if="{{popWord}}" bindtap="closePop">
+    <view class="pop" catchtap="noop">
+      <view class="pop-head">
+        <view class="pop-title">{{popWord.w}}</view>
+        <view class="pop-speak" wx:if="{{canSpeak}}" hover-class="btn-hover" catchtap="popSpeak">
+          <view class="speak-icon"></view>
+        </view>
+      </view>
+      <view class="pop-ph" wx:if="{{popWord.ph}}">{{popWord.ph}}</view>
+      <view class="pop-cn">{{popWord.cn}}</view>
+      <view class="pop-ex" wx:if="{{popWord.ex}}">
+        <view class="pop-ex-en">{{popWord.ex}}</view>
+        <view class="pop-ex-zh" wx:if="{{popWord.exZh}}">{{popWord.exZh}}</view>
+      </view>
+      <view class="pop-actions">
+        <view class="pop-btn" hover-class="btn-hover" bindtap="closePop">关闭</view>
+        <view class="pop-btn pop-btn-main" hover-class="btn-hover" bindtap="popDetail">查看详情</view>
+      </view>
+    </view>
   </view>
 </view>
