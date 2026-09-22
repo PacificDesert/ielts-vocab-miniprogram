@@ -628,13 +628,22 @@ function inflections(w) {
   }
   // -ic 加 k（mimic → mimicked）
   if (/ic$/.test(base)) { add(base + 'k'); add(base + 'ked'); add(base + 'king'); }
-  add(base + 'ly');
-  add(base + 'er');
-  add(base + 'est');
-  if (/e$/.test(base)) { add(base.slice(0, -1) + 'er'); add(base.slice(0, -1) + 'est'); }
-  if (isDoubling(base)) {
-    add(base + base.slice(-1) + 'er');
-    add(base + base.slice(-1) + 'est');
+  // -ly 同样只对短词生成：well→welly、on→only 是噪声，long→longly 不影响定位（longly 不会出现在例句里）
+  if (base.length <= 6) add(base + 'ly');
+  /*
+   * -er / -est 比较级。
+   * 只对「辅音结尾的短词」生成：big→bigger、easy→easier、hot→hotter。
+   * 元音结尾的不生成（see→seer、lie→lier 是纯噪声）。
+   *
+   * 这里**不能带 isDoubling 分支**：bet 是「元音+单个末尾辅音」，
+   * isDoubling('bet') 为 true，会生成 bet+t+er = better，
+   * 于是 LEMMA_MAP 把 better 判成 bet 的变形 —— 点 better 弹「bet 下注」。
+   * 例句里真要用比较级，词库中 better / hotter 多是独立条目，不靠这里推。
+   */
+  if (base.length <= 6 && /[^aeiou]$/.test(base) && !isDoubling(base)) {
+    add(base + 'er');
+    add(base + 'est');
+    if (/e$/.test(base)) { add(base.slice(0, -1) + 'er'); add(base.slice(0, -1) + 'est'); }
   }
   // 连字符词：shade-tolerant → shade tolerant / shade- tolerant（例句常在连字符后插空格）
   if (base.indexOf('-') > 0) {
@@ -794,8 +803,121 @@ function exParts(sentence, w) {
   return out;
 }
 
+/*
+ * ---------------------------------------------------------------
+ * 例句点词查义
+ * ---------------------------------------------------------------
+ */
+
+/**
+ * 屈折形式 → 原形。由 inflections() / IRREGULAR 反向构建，
+ * 所以两处的增补会自动同步，不会各写一套而对不上。
+ * 一个形式有多个原形时（bound ← bind/bound、lay ← lay/lie）保留全部候选，
+ * 查义时按「词库里有几条」择优，而不是随便挑一个。
+ */
+const LEMMA_MAP = (() => {
+  const map = {};
+  const put = (form, base) => {
+    if (!form || !base || form === base) return;
+    if (!map[form]) map[form] = [];
+    if (map[form].indexOf(base) < 0) map[form].push(base);
+  };
+  words.list.forEach(it => {
+    const base = String(it.w || '').toLowerCase();
+    if (!base) return;
+    inflections(base).forEach(f => put(f, base));
+    const irr = IRREGULAR[base];
+    if (irr) irr.forEach(f => put(String(f).toLowerCase(), base));
+  });
+  return map;
+})();
+
+/** 例句切词：返回 [{ t: '词或标点', w: 'word'|'' , sp: 前置空格 }] */
+function exTokens(sentence) {
+  const text = exText(sentence);
+  if (!text) return [];
+  const out = [];
+  // 匹配「可选前置空白 + 词 / 数字」或「可选前置空白 + 非词字符」
+  const re = /(\s*)([A-Za-z]+(?:[’'][A-Za-z]+)*(?:-[A-Za-z]+)*|[0-9][0-9.,]*|[^A-Za-z0-9]+)/g;
+  let m;
+  while ((m = re.exec(text))) {
+    const sp = m[1] || '';
+    const tok = m[2];
+    if (!/^[A-Za-z0-9]/.test(tok)) {
+      out.push({ t: sp + tok, w: '', sp });
+      continue;
+    }
+    /*
+     * 首尾的非字母字符（"quoted" 两头的引号）剥出去单独成片段。
+     * 内嵌的撇号/连字符是词的一部分（company's、well-known），不剥。
+     */
+    let head = '';
+    let tail = '';
+    let core = tok;
+    const hm = /^[^A-Za-z]+/.exec(core);
+    if (hm) { head = hm[0]; core = core.slice(head.length); }
+    const tm = /[^A-Za-z]+$/.exec(core);
+    if (tm) { tail = tm[0]; core = core.slice(0, -tail.length); }
+    if (head) out.push({ t: sp + head, w: '', sp });
+    if (core) out.push({ t: (head ? '' : sp) + core, w: core, sp: head ? '' : sp });
+    if (tail) out.push({ t: tail, w: '', sp: '' });
+  }
+  return out;
+}
+
+/** 查词：优先原形，其次屈折形式；返回词库条目或 null */
+function lookup(raw) {
+  const key = String(raw === undefined || raw === null ? '' : raw).trim().toLowerCase();
+  if (!key) return null;
+  const hit = byWord[key];
+  if (hit) return hit;
+  // 所有格 / 缩写：company's → company
+  const noApos = key.replace(/[’']s?$/, '');
+  if (noApos && noApos !== key && byWord[noApos]) return byWord[noApos];
+  const cands = LEMMA_MAP[key];
+  if (!cands || !cands.length) return null;
+  /*
+   * 一个屈折形式可能对应多个原形（better ← bet/better、lay ← lay/lie）。
+   * 不能取第一个命中就返回 —— LEMMA_MAP 是按词库顺序构建的，
+   * bet 排在 better 前面，于是点到 better 会给出 "bet 下注" 这种离谱答案。
+   * 原形本身就在词库里的，永远优先（better 是词，bet 只是它的还原猜测）。
+   */
+  if (byWord[key.replace(/[’']s?$/, '')]) return byWord[key.replace(/[’']s?$/, '')];
+  const inLib = cands.filter(c => byWord[c]);
+  if (!inLib.length) return null;
+  // 多个原形都在库里时取词长短的那个（bet/better → 选 better 更可能是本意）
+  inLib.sort((a, b) => b.length - a.length || a.localeCompare(b));
+  return byWord[inLib[0]];
+}
+
+/**
+ * 例句切成可点词片段，供页面渲染。
+ * 返回 [{ t: '显示文本', w: 'word'|'' , it: 词库条目|null }]，
+ * w 非空即为可点；it 为 null 表示「不在词库」（点一下给提示）。
+ */
+function exClickable(sentence, w) {
+  const parts = exParts(sentence, w);
+  const out = [];
+  parts.forEach(p => {
+    if (p.b) {
+      // 目标词整段保留，不拆（保证加粗范围与原来一模一样）
+      out.push({ t: p.t, w: '', it: null, bold: true });
+      return;
+    }
+    exTokens(p.t).forEach(tk => {
+      if (!tk.w) {
+        out.push({ t: tk.t, w: '', it: null, bold: false });
+        return;
+      }
+      out.push({ t: tk.t, w: tk.w, it: lookup(tk.w), bold: false });
+    });
+  });
+  return out;
+}
+
 module.exports = {
   all, get, chapterList, chapterWords, search, slice,
   themeImage, card, similar, forms, prevTag, options, example, exText, exSpan, exParts,
+  exTokens, lookup, exClickable,
   total: words.list.length
 };
