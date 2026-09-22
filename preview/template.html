@@ -1465,7 +1465,7 @@ function exBlock(w) {
     + '</div><div class="card ex-card">'
     + '<div class="ex-en">' + toks.map((t, i) => {
         if (!t.w) return t.bold ? '<b class="ex-strong">' + esc(t.t) + '</b>' : '<span>' + esc(t.t) + '</span>';
-        return '<span class="ex-hit" data-exw="' + i + '">' + esc(t.t) + '</span>';
+        return '<span class="ex-hit" data-act="exw" data-exw="' + i + '">' + esc(t.t) + '</span>';
       }).join('') + '</div>'
     + (w.ex[1] ? '<div class="ex-zh">' + esc(w.ex[1]) + '</div>' : '')
     + '</div></div>';
