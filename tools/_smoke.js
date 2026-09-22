@@ -500,31 +500,98 @@ const shortAll = words.filter(w => sandbox.optionsFor(w, 4).length !== 4);
 ok('全库 ' + words.length + ' 词都不缺选项', shortAll.length === 0,
   shortAll.length + ' 个不足：' + shortAll.slice(0, 6).map(w => w.w).join(', '));
 
-console.log('\n[11] 无例句词的兜底（原书确实没给例句，约 9.8%）');
-/* 确认这批词的缺口位置：不是解析失败（否则会集中在某几章） */
+console.log('\n[11] 例句覆盖率与无例句兜底');
+/* 本轮已补齐历史缺口（原书没给例句的 326 个词，均已补写）。现在应当 100% 覆盖。 */
 const noEx = words.filter(w => !w.ex || !w.ex.length || !w.ex[0]);
-ok('无例句词约占一成（数据缺口，非解析 bug）',
-  noEx.length > 0 && noEx.length / words.length < 0.15,
-  noEx.length + ' / ' + words.length + ' = ' + (noEx.length / words.length * 100).toFixed(1) + '%');
-/* 关键：这些词的音标与释义必须齐全，否则不是「只缺例句」而是整条数据缺失 */
-ok('无例句词仍有音标与释义（只缺例句）',
-  noEx.every(w => w.ph && w.cn), noEx.filter(w => !w.ph || !w.cn).length + ' 个缺音标或释义');
-/* 缺口均匀散落在各章 → 证明不是某几章的 OCR 问题（注意 ch 是章节名，不是下标） */
-const CHAPS = vm.runInContext('CHAPTERS', sandbox);
-const chapMiss = CHAPS.map(name => words.filter(w => w.ch === name && (!w.ex || !w.ex.length || !w.ex[0])).length);
-ok('缺口分散在全部 ' + CHAPS.length + ' 章（每章都有，非集中某章）',
-  chapMiss.filter(n => n > 0).length >= 18, '有缺口的章数=' + chapMiss.filter(n => n > 0).length);
-/* exParts 对空例句必须安全返回空数组，不能抛错 */
+ok('全库例句覆盖完整（0 个缺例句）', noEx.length === 0,
+  noEx.length + ' / ' + words.length + ' 仍缺：' + noEx.slice(0, 6).map(w => w.w).join(', '));
+/* 兜底仍然保留作为安全网：万一以后又出现无例句的词，UI 不会留白 */
 ok('exParts("" ) 安全返回空数组', JSON.stringify(sandbox.exParts('', 'pebble')) === '[]');
 ok('exParts(undefined) 安全返回空数组', JSON.stringify(sandbox.exParts(undefined, 'pebble')) === '[]');
-/* 预览侧：无例句时要渲染单词当锚点，而不是留白 */
 ok('预览侧无例句时用单词兜底（不留白）', /stage-ex-t ex-strong">' \+ esc\(w\.w\)/.test(html));
-/* 小程序侧：study 页有 noEx 分支 */
 const wxml = fs.readFileSync(path.join(__dirname, '..', 'pages', 'study', 'study.wxml'), 'utf8');
 const sjs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'study', 'study.js'), 'utf8');
-ok('小程序 study.wxml 有 noEx 兜底分支', /wx:elif="\{\{noEx\}\}"/.test(wxml));
+ok('小程序 study.wxml 保留了 noEx 兜底分支', /wx:elif="\{\{noEx\}\}"/.test(wxml));
 ok('小程序 study.js 计算并下传 noEx', /noEx:\s*!exParts\.length/.test(sjs));
 ok('小程序 study.js 声明了 noEx 初值', /noEx:\s*false/.test(sjs));
+
+console.log('\n[12] 例句中目标词的定位（含屈折 / 短语 / 派生词）');
+/* 全库跑一遍 exParts，确认每条例句都能标出目标词；顺带覆盖本轮补写的新例句 */
+let exMiss = [];
+words.forEach(w => {
+  if (!w.ex || !w.ex[0]) return;
+  const b = sandbox.exParts(w.ex[0], w.w).filter(p => p.b);
+  if (!b.length) exMiss.push(w.w);
+});
+ok('全库 ' + words.length + ' 条例句都能定位到目标词', exMiss.length === 0,
+  exMiss.length + ' 条定位不到：' + exMiss.slice(0, 8).join(', '));
+/* 本轮新学会的几类形式，逐个点名断言，防止以后回退 */
+ok('短语被拆开也能命中（spend time → spends）',
+  (sandbox.exParts('She spends a lot of time reading.', 'spend time').filter(p => p.b)[0] || {}).t === 'spends');
+ok('短语连写变位能命中（take up → takes up）',
+  (sandbox.exParts('It takes up a lot of time.', 'take up').filter(p => p.b)[0] || {}).t === 'takes up');
+ok('派生词能命中词根（southern → south）',
+  (sandbox.exParts('This bird flies south in winter.', 'southern').filter(p => p.b)[0] || {}).t === 'south');
+ok('不规则过去式能命中（bend → bent）',
+  (sandbox.exParts('He bent down to pick it up.', 'bend').filter(p => p.b)[0] || {}).t === 'bent');
+ok('不规则过去式能命中（kneel → knelt）',
+  (sandbox.exParts('She knelt down.', 'kneel').filter(p => p.b)[0] || {}).t === 'knelt');
+ok('不规则过去式能命中（uphold → upheld）',
+  (sandbox.exParts('The court upheld the decision.', 'uphold').filter(p => p.b)[0] || {}).t === 'upheld');
+
+console.log('\n[13] 释义质量（本轮修掉 OCR 噪声与串行）');
+/* 释义里除「约20至30年」这类合理数字外，不应混入题号/页码数字 */
+const digitBad = words.filter(w => /\d/.test(String(w.cn || '')) && !/[至岁]/.test(w.cn));
+ok('释义不再混入题号 / 页码数字', digitBad.length === 0,
+  digitBad.length + ' 条：' + digitBad.slice(0, 6).map(w => w.w + '=' + w.cn).join(' | '));
+/*
+ * 串入例句残句：OCR 的真实形态是「释义 + 一整句有主谓的中文」，
+ * 典型如 "n. 颗粒，微粒；极小量 construction.新建的办公楼结构非常坚固"，
+ * 特征是出现了**句号后的中文**或**英文单词后紧跟中文长句**。
+ * （不要用「尾部含的/是」去判 —— 正常释义里大量夹注以「的」结尾，
+ *   实测这样会误报 9 条正常释义，如 stormy / fur / terrestrial。）
+ */
+const glue = words.filter(w => {
+  const cn = String(w.cn || '').trim();
+  /* 形态 1：出现中文句号，且句号后面还有中文（正常释义不用句号收尾再接内容） */
+  if (/。[^。]*[\u4e00-\u9fa5]/.test(cn)) return true;
+  /* 形态 2：一个小写英文单词（非词性缩写）后面直接跟一串中文，中间没有释义标点 */
+  if (/[a-z]{3,}\.(?=[\u4e00-\u9fa5]{4,})/.test(cn) && !/\b(?:n|v|adj|adv|prep|conj|pron|num|art|int)\./i.test(cn)) return true;
+  return false;
+});
+ok('释义不再串入例句残句', glue.length === 0,
+  glue.length + ' 条：' + glue.slice(0, 5).map(w => w.w + '=' + w.cn).join(' | '));
+/* 点名确认本轮修掉的两条已彻底干净 */
+['swarm', 'particle', 'solid'].forEach(x => {
+  const w = words.find(y => y.w === x);
+  ok('  ' + x + ' 释义已无残句', w && !/。[^。]*[\u4e00-\u9fa5]/.test(w.cn) && String(w.cn).indexOf('正确') < 0 && String(w.cn).indexOf('construction') < 0,
+    w ? w.cn : '(缺失)');
+});
+/* 释义不应出现 undefined / null 这类脚本事故 */
+ok('释义没有 undefined / null 事故', words.every(w => String(w.cn || '').indexOf('undefined') < 0 && String(w.cn || '').indexOf('null') < 0));
+ok('break 的释义已修正（原为 keep 的释义）',
+  (words.find(w => w.w === 'break') || {}).cn === 'v. 打破，打碎；违反；中断 n. 休息；裂口');
+ok('break 的例句与释义一致（用 break 而非 keep）',
+  /break the glass/.test((words.find(w => w.w === 'break') || { ex: [''] }).ex[0]));
+/* assistant 曾误用 scientist 的释义「n. 科学家」，应为「助手」 */
+const assWord = words.find(w => w.w === 'assistant') || {};
+ok('assistant 释义不是 scientist 的（已修正为助手）',
+  String(assWord.cn || '').indexOf('助手') >= 0 && String(assWord.cn || '').indexOf('科学家') < 0,
+  assWord.cn);
+/* 释义完全相同的词只应剩同义词，不应含拼错/串行的（点名：scientist 组已拆开） */
+const cnMap = {};
+words.forEach(w => { const k = String(w.cn || '').trim(); (cnMap[k] = cnMap[k] || []).push(w.w); });
+const badDup = Object.keys(cnMap).filter(k => cnMap[k].length > 1)
+  .filter(k => !/^(n\. 宇宙飞船|adj\. 有害的|v\. 选择|流行|惩罚，处罚)$/.test(k));
+ok('释义重复的组只剩同义词', badDup.length === 0,
+  badDup.map(k => k + '<-' + cnMap[k].join('/')).join(' | '));
+/* 每个词对象的字段键唯一（重复键会被 JSON.parse 静默覆盖） */
+const rawWords = fs.readFileSync(path.join(__dirname, '..', 'data', 'words.js'), 'utf8');
+let dupKey = 0;
+rawWords.split(/"w":"/).slice(1).forEach(seg => {
+  ['"ex":', '"cn":', '"ph":', '"ch":', '"sim":'].forEach(k => { if (seg.split(k).length - 1 > 1) dupKey += 1; });
+});
+ok('词库无重复字段键', dupKey === 0, dupKey + ' 处重复');
 
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);

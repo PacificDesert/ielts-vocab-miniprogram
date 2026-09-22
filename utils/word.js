@@ -395,6 +395,46 @@ function inflections(w) {
     add(base.replace(/-/g, ' '));
     add(base.replace(/-/g, '- '));
   }
+  /*
+   * 短语（take up / spend time）：例句里往往只有动词在变位，后面的虚词不动，
+   * 于是 "takes up" 匹配不上原形 "take up"。这里把每个词分别变位后再拼回来。
+   * 只对动词那一部分（第一段）做常见变位，够覆盖 take/spend/look 这类高频动词。
+   */
+  if (base.indexOf(' ') > 0) {
+    const segs = base.split(' ');
+    const head = segs[0];
+    const tail = segs.slice(1).join(' ');
+    const variants = [head + 's', head + 'es', head + 'ed', head + 'd', head + 'ing'];
+    if (/[^aeiou]y$/.test(head)) variants.push(head.slice(0, -1) + 'ies', head.slice(0, -1) + 'ied');
+    if (/e$/.test(head)) variants.push(head.slice(0, -1) + 'ing');
+    if (isDoubling(head)) variants.push(head + head.slice(-1) + 'ing', head + head.slice(-1) + 'ed');
+    variants.forEach(v => add(v + ' ' + tail));
+    /*
+     * 短语可能被别的词打断：spend time 在例句里是 "spends a lot of time"，
+     * 连写形式匹配不上。**退一步只匹配首段动词**（spend / spends），
+     * 这样至少能把动词标出来，而不是整句不加粗。
+     * 只加变位形式、不加原形 —— 原形太短太常见（take/look/get），会误命中别处。
+     */
+    variants.forEach(v => add(v));
+  }
+  /*
+   * 派生词（southern ← south、northern ← north、easily ← easy…）：
+   * 目标词往往是另一个词的派生形式，例句里用的是词根。只补最常见的几组后缀，
+   * 确保「目标词不在例句里、但词根在」时也能定位到，不至于整句不加粗。
+   */
+  const DERIVE = [
+    [/^(south|north|east|west)ern$/, m => m[1]],
+    [/^(north|south|east|west)$/, m => m[1] + 'ern'],
+    [/^(.+)ly$/, m => m[1]],
+    [/^(.+)ness$/, m => m[1]],
+    [/^un(.+)$/, m => m[1]],
+    [/^(.+)ment$/, m => m[1]],
+    [/^(.+)ity$/, m => m[1]]
+  ];
+  DERIVE.forEach(([re, fn]) => {
+    const m = re.exec(base);
+    if (m) add(fn(m));
+  });
   return Object.keys(set);
 }
 
@@ -428,7 +468,12 @@ const IRREGULAR = {
   spread: ['spread'], stand: ['stood'], steal: ['stole', 'stolen'],
   stick: ['stuck'], strike: ['struck'], swear: ['swore', 'sworn'],
   sweep: ['swept'], swim: ['swam', 'swum'], swing: ['swung'],
-  take: ['took', 'taken'], teach: ['taught'], tear: ['tore', 'torn'],
+  /* 常见但易漏的：体检发现例句里用了这些形式却没进表（bent/knelt/upheld…） */
+  bend: ['bent'], kneel: ['knelt'], bury: ['buried'], uphold: ['upheld'],
+  leap: ['leapt'], creep: ['crept'], weep: ['wept'], flee: ['fled'],
+  grind: ['ground'], bind: ['bound'], spin: ['spun'], spit: ['spat'],
+  mistake: ['mistook', 'mistaken'], overcome: ['overcame'], foresee: ['foresaw', 'foreseen'],
+  sink: ['sank', 'sunk'], spring: ['sprang'], sting: ['stung'],  take: ['took', 'taken'], teach: ['taught'], tear: ['tore', 'torn'],
   tell: ['told'], think: ['thought'], throw: ['threw', 'thrown'],
   wake: ['woke', 'woken'], wear: ['wore', 'worn'], win: ['won'],
   wind: ['wound'], withdraw: ['withdrew', 'withdrawn'], write: ['wrote', 'written'],

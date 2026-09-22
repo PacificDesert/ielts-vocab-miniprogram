@@ -581,6 +581,24 @@ function inflections(w) {
   if (base.indexOf('-') > 0) {
     add(base.replace(/-/g, '')); add(base.replace(/-/g, ' ')); add(base.replace(/-/g, '- '));
   }
+  /* 短语（take up / spend time）：例句里只有动词变位（takes up），把首段变位后拼回；
+     短语还常被打断（spends a lot of time），所以退一步也单独收首段变位形式 */
+  if (base.indexOf(' ') > 0) {
+    const segs = base.split(' '), head = segs[0], tail = segs.slice(1).join(' ');
+    const vs = [head + 's', head + 'es', head + 'ed', head + 'd', head + 'ing'];
+    if (/[^aeiou]y$/.test(head)) vs.push(head.slice(0, -1) + 'ies', head.slice(0, -1) + 'ied');
+    if (/e$/.test(head)) vs.push(head.slice(0, -1) + 'ing');
+    if (isDoubling(head)) vs.push(head + head.slice(-1) + 'ing', head + head.slice(-1) + 'ed');
+    vs.forEach(v => { add(v + ' ' + tail); add(v); });
+  }
+  /* 派生词（southern ← south）：例句用词根时也要能定位 */
+  [[/^(south|north|east|west)ern$/, m => m[1]],
+   [/^(north|south|east|west)$/, m => m[1] + 'ern'],
+   [/^(.+)ly$/, m => m[1]], [/^(.+)ness$/, m => m[1]],
+   [/^un(.+)$/, m => m[1]], [/^(.+)ment$/, m => m[1]],
+   [/^(.+)ity$/, m => m[1]]].forEach(([re, fn]) => {
+    const mm = re.exec(base); if (mm) add(fn(mm));
+  });
   return Object.keys(set);
 }
 
@@ -614,6 +632,12 @@ const IRREGULAR = {
   spread: ['spread'], stand: ['stood'], steal: ['stole', 'stolen'],
   stick: ['stuck'], strike: ['struck'], swear: ['swore', 'sworn'],
   sweep: ['swept'], swim: ['swam', 'swum'], swing: ['swung'],
+  /* 常见但易漏的（与 utils/word.js 保持一致） */
+  bend: ['bent'], kneel: ['knelt'], bury: ['buried'], uphold: ['upheld'],
+  leap: ['leapt'], creep: ['crept'], weep: ['wept'], flee: ['fled'],
+  grind: ['ground'], bind: ['bound'], spin: ['spun'], spit: ['spat'],
+  mistake: ['mistook', 'mistaken'], overcome: ['overcame'], foresee: ['foresaw', 'foreseen'],
+  sink: ['sank', 'sunk'], spring: ['sprang'], sting: ['stung'],
   take: ['took', 'taken'], teach: ['taught'], tear: ['tore', 'torn'],
   tell: ['told'], think: ['thought'], throw: ['threw', 'thrown'],
   wake: ['woke', 'woken'], wear: ['wore', 'worn'], win: ['won'],
