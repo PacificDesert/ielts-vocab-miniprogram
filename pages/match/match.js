@@ -1,5 +1,6 @@
 const store = require('../../utils/store');
 const flip = require('../../utils/flip');
+const word = require('../../utils/word');
 
 const ROUND = 4;   // 每屏 4 对，做完自动翻到下一屏
 
@@ -76,7 +77,10 @@ Page(flip.mixin({
   buildRound() {
     const words = this.data.rounds[this.data.ri] || [];
     const left = shuffle(words.map((it, i) => ({ k: 'L' + i, t: it.w, w: it.w, st: '' })));
-    const right = shuffle(words.map((it, i) => ({ k: 'R' + i, t: it.cn, w: it.w, st: '' })));
+    // 中文侧统一走 cnText 补词性：词库自带的直接用，其余查 POS_MAP
+    const right = shuffle(words.map((it, i) => ({
+      k: 'R' + i, t: word.cnText(it.cn, it.w), w: it.w, st: ''
+    })));
     this.setData({ left, right, pickL: -1, pickR: -1 });
   },
 

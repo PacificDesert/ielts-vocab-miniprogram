@@ -473,9 +473,9 @@ ok('抽样 ' + sample.length + ' 词的选项都是 4 个（无不足）', count
 const noSelf = sample.filter(w => {
   const o = sandbox.optionsFor(w, 4);
   const rights = o.filter(x => x.ok);
-  /* optionsFor 内部用 cnText(it.cn) 生成正确项，所以这里要比 cnText(cn)；
-     直接比 cnText(w) 会传进词对象，得到 "[object Object]"（踩过） */
-  return rights.length !== 1 || rights[0].cn !== sandbox.cnText(w.cn);
+  /* optionsFor 内部用 cnText(it.cn, it.w) 生成正确项，所以这里必须同样传词；
+     只传 cn 会拿不到 POS_MAP 的词性（本轮改成两参数后踩过） */
+  return rights.length !== 1 || rights[0].cn !== sandbox.cnText(w.cn, w.w);
 });
 ok('抽样每题恰好 1 个正确项且与题干释义一致', noSelf.length === 0,
   noSelf.length + ' 题异常');
@@ -487,7 +487,7 @@ ok('抽样每题选项释义互不重复', dupIn.length === 0, dupIn.length + ' 
 /* 干扰项绝不能与题干文本撞车，否则答案不唯一 */
 const collideIn = sample.filter(w => {
   const o = sandbox.optionsFor(w, 4);
-  const title = sandbox.cnText(w.cn);
+  const title = sandbox.cnText(w.cn, w.w);
   return o.filter(x => !x.ok).some(x => x.cn === title);
 });
 ok('抽样每题题干不与干扰项撞车', collideIn.length === 0,
@@ -592,6 +592,37 @@ rawWords.split(/"w":"/).slice(1).forEach(seg => {
   ['"ex":', '"cn":', '"ph":', '"ch":', '"sim":'].forEach(k => { if (seg.split(k).length - 1 > 1) dupKey += 1; });
 });
 ok('词库无重复字段键', dupKey === 0, dupKey + ' 处重复');
+
+console.log('\n[14] 释义词性标注（本轮：匹配页 + 记忆卡选项都带词性）');
+/* POS_MAP 是脚本作用域的 const，不在 sandbox 上，用 runInContext 取 */
+const POS_MAP = vm.runInContext('(POS_MAP)', sandbox);
+ok('POS_MAP 已定义且条目充足', POS_MAP && Object.keys(POS_MAP).length >= 1200,
+  POS_MAP ? Object.keys(POS_MAP).length + ' 条' : '(未定义)');
+ok('POS_MAP 取词用大写字面量可命中（Stuff）',
+  sandbox.cnText('东西；原料', 'Stuff') === 'n. 东西；原料',
+  sandbox.cnText('东西；原料', 'Stuff'));
+
+/* 全库 3328 词逐一验证：每个词的释义经 cnText 后都必须带词性 */
+const POS_LEAD2 = /^(n|adj|adv|v|vt|vi|prep|conj|pron|num|int|art|aux|abbr|ord)\.\s*/;
+const noPosWord = words.filter(w => !POS_LEAD2.test(sandbox.cnText(w.cn, w.w)));
+ok('全库 3328 词经 cnText 后都带词性', noPosWord.length === 0,
+  noPosWord.length + ' 条无词性：' + noPosWord.slice(0, 8).map(w => w.w + '=' + sandbox.cnText(w.cn, w.w)).join(' | '));
+
+/* 释义里不应再残留 OCR 吃坏的词性前缀（r/i/fi/ac/af/adi/up 等） */
+const ocrJunk = words.filter(w => /^[a-zA-Z]{1,4}[.\s]*[\u4e00-\u9fa5]/.test(String(w.cn || '').trim())
+  && !POS_LEAD2.test(String(w.cn || '').trim()));
+ok('释义开头无 OCR 损坏的词性残渣', ocrJunk.length === 0,
+  ocrJunk.length + ' 条：' + ocrJunk.slice(0, 6).map(w => w.w + '=' + w.cn).join(' | '));
+
+/* match 页必须走 cnText（否则中文侧没有词性） */
+const matchJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'match', 'match.js'), 'utf8');
+ok('小程序 match.js 引用了 word 工具', /require\(.*utils\/word.*\)/.test(matchJs));
+ok('小程序 match.js 中文侧走 cnText', /cnText\(it\.cn,\s*it\.w\)/.test(matchJs));
+ok('预览端 vMatch 中文侧走 cnText', /t:\s*cnText\(it\.cn,\s*it\.w\)/.test(html));
+ok('预览端 cnText 支持第二参数（word）', /function cnText\(cn,\s*word\)/.test(html));
+ok('预览端 POS_MAP 已同步为全量（>=1200 条）',
+  (html.match(/"(?:[a-z ]+|Stuff)": "(?:n|adj|adv|v|num|int)\./g) || []).length >= 1200,
+  (html.match(/"(?:[a-z ]+|Stuff)": "(?:n|adj|adv|v|num|int)\./g) || []).length + ' 条');
 
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);
