@@ -13,12 +13,13 @@
     <view class="profile-main">
       <input
         class="nickname-input"
-        type="nickname"
-        value="{{profile.nickname}}"
+        value="{{nickInput}}"
         placeholder="点击设置昵称"
         placeholder-class="nickname-ph"
+        maxlength="20"
+        bindinput="onNickInput"
         bindblur="onNickname"
-        bindchange="onNickname"
+        bindconfirm="onNickname"
       />
       <view class="profile-sub">{{stats.learned}} / {{total}} 词已学习 · 正确率 {{stats.accuracy}}%</view>
     </view>

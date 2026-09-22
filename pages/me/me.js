@@ -22,7 +22,8 @@ Page({
     syncText: '',
     syncAt: '',
     total: 0,
-    profile: { avatar: '', nickname: '' }
+    profile: { avatar: '', nickname: '' },
+    nickInput: ''
   },
 
   onShow() {
@@ -36,6 +37,7 @@ Page({
 
   refresh() {
     const plan = store.get().plan;
+    const profile = store.profile();
     this.setData({
       stats: store.stats(),
       total: word.total,
@@ -44,7 +46,8 @@ Page({
       cloud: cloud.isReady(),
       syncText: cloud.isReady() ? '已开启' : '未配置云环境',
       syncAt: this.formatSync(store.lastSync()),
-      profile: store.profile()
+      profile,
+      nickInput: profile.nickname
     });
   },
 
@@ -137,9 +140,14 @@ Page({
     });
   },
 
-  /** 昵称：type="nickname" 的输入框会在失焦/确认时带回微信昵称 */
+  /** 昵称输入实时同步到缓冲字段，否则受控 input 会吞掉用户打的字 */
+  onNickInput(e) {
+    this.setData({ nickInput: e.detail.value });
+  },
+
+  /** 失焦/确认时把缓冲值写回 store（自由输入，任意名字都行） */
   onNickname(e) {
-    const name = String((e.detail && e.detail.value) || '').trim();
+    const name = String((e.detail && e.detail.value) || this.data.nickInput || '').trim();
     if (name === store.profile().nickname) return;
     this.saveProfile({ nickname: name }, name ? '昵称已更新' : '已清空昵称');
   },
