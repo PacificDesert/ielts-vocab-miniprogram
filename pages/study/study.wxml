@@ -44,6 +44,28 @@
                 </view>
               </view>
 
+              <!--
+                原书就没给例句的词（约 9.8%）：不留空白卡片，改把单词本身放在正面当锚点，
+                用户看着单词选释义；小喇叭照旧可以听发音。
+              -->
+              <view class="stage-ex-line" style="color:{{card.fg}}" wx:elif="{{noEx}}">
+                <text class="stage-ex-t ex-strong">{{cur.w}}</text>
+                <view
+                  class="ex-speak {{speaking ? 'on' : ''}}"
+                  wx:if="{{canSpeak}}"
+                  hover-class="ex-speak-hover"
+                  hover-stay-time="80"
+                  catchtap="onSpeakEx"
+                >
+                  <view class="horn">
+                    <view class="horn-body"></view>
+                    <view class="horn-cone"></view>
+                  </view>
+                  <view class="horn-wave w1"></view>
+                  <view class="horn-wave w2"></view>
+                </view>
+              </view>
+
               <view class="opts">
                 <view
                   wx:for="{{opts}}"

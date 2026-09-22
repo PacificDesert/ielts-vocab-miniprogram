@@ -29,6 +29,7 @@ Page(flip.mixin({
     opts: [],
     picked: false,
     exParts: [],
+    noEx: false,
     canSpeak: !!config.AUDIO_API,
     speaking: false,
     turnSpeed: null
@@ -112,10 +113,18 @@ Page(flip.mixin({
     const { list, idx } = this.data;
     const cur = list[idx] || {};
     const exRaw = cur.ex && cur.ex[0] ? cur.ex[0] : '';
+    const exParts = word.exParts(exRaw, cur.w);
     this.setData({
       cur,
       // 例句：去掉《例词》书名号（接口会把书名号也念出来），并把目标词单独切出来加黑加粗
-      exParts: word.exParts(exRaw, cur.w),
+      exParts,
+      /*
+       * 约 9.8% 的词（326 个）原书就没有例句 —— 这是数据本身的缺口，
+       * 不是解析 bug（缺例句的词均匀散落在全部 22 章，各章 3%~15%，
+       * 且这些词的音标与释义都完整）。没有例句时就不能只留四个中文释义让用户干猜，
+       * 正面改成显示单词本身当锚点（见 study.wxml 的 noEx 分支）。
+       */
+      noEx: !exParts.length,
       // 正面「选释义」的四个选项卡：正确释义 + 3 个形近词释义，每张卡重新打乱顺序
       opts: cur.w ? shuffle(word.options(cur, 4).map(o => ({ cn: o.cn, ok: o.ok, st: '' }))) : [],
       // 左上角标记上一个单词的拼写 / 音标 / 中文释义；第一个单词为空（不显示）

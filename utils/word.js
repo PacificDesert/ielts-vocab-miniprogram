@@ -301,9 +301,12 @@ function options(it, n) {
   }
 
   // 4) 全表轮转兜底：前面几级都被同义词屏蔽掉时，保证任何词都能凑满选项
+  //    从目标词的位置开始绕一圈（原来这里误用了不存在的 start 变量，
+  //    导致兜底完全失效 —— 那些词只能拿到不足 4 个选项，页面上就有选项点不动）
+  const origin = it.i >= 0 ? it.i : 0;
   for (let pass = 0; pass < 2 && picked.length < count - 1; pass += 1) {
-    for (let k = 0; k < list.length && picked.length < count - 1; k += 1) {
-      push(list[(start + k) % list.length]);
+    for (let k = 1; k <= list.length && picked.length < count - 1; k += 1) {
+      push(list[(origin + k) % list.length]);
     }
   }
 

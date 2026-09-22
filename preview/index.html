@@ -149,6 +149,17 @@ body.dark .side h1{color:#fff}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
 .flip-back{position:absolute;left:0;top:0;right:0;transform:rotateY(180deg)}
+/*
+ * 命中问题（踩过，很深）：背面 .flip-back 是绝对定位、且排在 DOM 后面，
+ * 即使 backface-visibility:hidden，移动端浏览器里它仍会盖在正面选项卡上方吃掉点击 ——
+ * 表现就是「从第二个单词开始，好多选项卡点了没反应」。
+ * 所以不能只靠 backface-visibility，必须显式把不该收点击的那一面关掉：
+ *   · 未翻面：背面 visibility:hidden + pointer-events:none
+ *   · 已翻面：正面 pointer-events:none（翻过去后正面本来也不该点）
+ * 用 visibility 而不是 display，是为了不破坏 preserve-3d 的层叠与过渡。
+ */
+.flip-box:not(.flip-on) .flip-back{visibility:hidden;pointer-events:none}
+.flip-box.flip-on .flip-face:not(.flip-back){pointer-events:none}
 .stage-line{width:44px;height:2px;background:var(--line);margin:22px 0}
 .stage-cn{font-size:18px;line-height:1.55}
 .stage-ch{font-size:12px;color:var(--text2);margin-top:14px}
@@ -1162,7 +1173,10 @@ function vStudy() {
         ? '<div class="stage-ex-line" style="color:' + cs.fg + '">'
           + '<span class="stage-ex-t">' + exParts(w.ex[0], w.w).map(p => (p.b ? '<b class="ex-strong">' + esc(p.t) + '</b>' : esc(p.t))).join('') + '</span>'
           + '<span class="ex-speak" data-act="speakex">' + speakerGlyph() + '</span></div>'
-        : '')
+        /* 原书没给例句的词（约 9.8%）：不空着，把单词本身放到正面当锚点，照样能点小喇叭听音 */
+        : '<div class="stage-ex-line" style="color:' + cs.fg + '">'
+          + '<span class="stage-ex-t ex-strong">' + esc(w.w) + '</span>'
+          + '<span class="ex-speak" data-act="speakex">' + speakerGlyph() + '</span></div>')
     + '<div class="opts">'
     + opts.map((o, i) => '<div class="opt ' + o.st + '" data-act="pick" data-i="' + i + '"'
         + ' style="border-color:' + cs.line + ';color:' + cs.fg + (o.st === 'ok' ? ';border-color:#34C759' : (o.st === 'bad' ? ';border-color:#FF3B30' : '')) + '">'

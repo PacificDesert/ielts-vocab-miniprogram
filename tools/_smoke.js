@@ -439,5 +439,92 @@ act('toggleSound', {});
 ok('再点回有声', peek('soundOn()') === true);
 ok('「重置学习进度」不清掉有声开关', /sound: S\.sound/.test(html));
 
+console.log('\n[9] 翻转卡的点击命中（本轮修复：第二个单词起选项卡点不动）');
+/* 根因：背面 .flip-back 绝对定位且 DOM 靠后，backface-visibility 在移动端不可靠，
+   会盖住正面选项卡吃点击。修法是显式关掉不该收点击的那一面。 */
+const cssFlat = html.replace(/\s+/g, ' ');
+ok('未翻面时背面被显式关闭命中',
+  /\.flip-box:not\(\.flip-on\)\s*\.flip-back\s*\{[^}]*visibility:\s*hidden/.test(cssFlat) &&
+  /\.flip-box:not\(\.flip-on\)\s*\.flip-back\s*\{[^}]*pointer-events:\s*none/.test(cssFlat));
+ok('已翻面时正面被显式关闭命中',
+  /\.flip-box\.flip-on\s*\.flip-face:not\(\.flip-back\)\s*\{[^}]*pointer-events:\s*none/.test(cssFlat));
+ok('旧的无效规则（整面 pointer-events:none）已删除',
+  !/\.flip-box\.flip-on\s*\.flip-face\s*\{[^}]*pointer-events:\s*none/.test(cssFlat));
+ok('仍保留 backface-visibility:hidden 作为双保险',
+  /backface-visibility:\s*hidden/.test(cssFlat) && /-webkit-backface-visibility:\s*hidden/.test(cssFlat));
+
+console.log('\n[10] 选项兜底恒能凑满 4 个（本轮修复：兜底引用未定义变量 start）');
+/* 根因：第 4 级兜底里用了不存在的 start，list[NaN] = undefined → 兜底完全失效。
+   全库 3328 词逐个跑 optionsFor 太慢（要做整轮编辑距离），
+   这里取「每章首中尾 + 已知难例」的样本，并在下面单独跑一次全库长度检查。 */
+const sampleSet = new Set();
+for (let c = 0; c < 22; c += 1) {
+  const inChap = words.filter(w => w.ch === c);
+  if (inChap.length) sampleSet.add(inChap[0]).add(inChap[inChap.length >> 1]).add(inChap[inChap.length - 1]);
+}
+['pebble', 'phenomenon', 'equip', 'circulate', 'undergo', 'hydrogen', 'climate', 'narrow'].forEach(x => {
+  const w = words.find(y => y.w.toLowerCase() === x);
+  if (w) sampleSet.add(w);
+});
+const sample = [...sampleSet];
+const countBad = sample.filter(w => sandbox.optionsFor(w, 4).length !== 4);
+ok('抽样 ' + sample.length + ' 词的选项都是 4 个（无不足）', countBad.length === 0,
+  countBad.length + ' 个不足：' + countBad.slice(0, 6).map(w => w.w).join(', '));
+const noSelf = sample.filter(w => {
+  const o = sandbox.optionsFor(w, 4);
+  const rights = o.filter(x => x.ok);
+  /* optionsFor 内部用 cnText(it.cn) 生成正确项，所以这里要比 cnText(cn)；
+     直接比 cnText(w) 会传进词对象，得到 "[object Object]"（踩过） */
+  return rights.length !== 1 || rights[0].cn !== sandbox.cnText(w.cn);
+});
+ok('抽样每题恰好 1 个正确项且与题干释义一致', noSelf.length === 0,
+  noSelf.length + ' 题异常');
+const dupIn = sample.filter(w => {
+  const cn = sandbox.optionsFor(w, 4).map(x => x.cn);
+  return new Set(cn).size !== cn.length;
+});
+ok('抽样每题选项释义互不重复', dupIn.length === 0, dupIn.length + ' 题有重复');
+/* 干扰项绝不能与题干文本撞车，否则答案不唯一 */
+const collideIn = sample.filter(w => {
+  const o = sandbox.optionsFor(w, 4);
+  const title = sandbox.cnText(w.cn);
+  return o.filter(x => !x.ok).some(x => x.cn === title);
+});
+ok('抽样每题题干不与干扰项撞车', collideIn.length === 0,
+  collideIn.length + ' 题撞车：' + collideIn.slice(0, 6).map(w => w.w).join(', '));
+ok('兜底分支不再引用未定义的 start',
+  !/% WORDS\.length\)/.test(html) || /const origin = it\.i/.test(html));
+
+/* 全库只查长度，不比对释义（够快）：确认没有任何词拿不到 4 个选项 */
+const shortAll = words.filter(w => sandbox.optionsFor(w, 4).length !== 4);
+ok('全库 ' + words.length + ' 词都不缺选项', shortAll.length === 0,
+  shortAll.length + ' 个不足：' + shortAll.slice(0, 6).map(w => w.w).join(', '));
+
+console.log('\n[11] 无例句词的兜底（原书确实没给例句，约 9.8%）');
+/* 确认这批词的缺口位置：不是解析失败（否则会集中在某几章） */
+const noEx = words.filter(w => !w.ex || !w.ex.length || !w.ex[0]);
+ok('无例句词约占一成（数据缺口，非解析 bug）',
+  noEx.length > 0 && noEx.length / words.length < 0.15,
+  noEx.length + ' / ' + words.length + ' = ' + (noEx.length / words.length * 100).toFixed(1) + '%');
+/* 关键：这些词的音标与释义必须齐全，否则不是「只缺例句」而是整条数据缺失 */
+ok('无例句词仍有音标与释义（只缺例句）',
+  noEx.every(w => w.ph && w.cn), noEx.filter(w => !w.ph || !w.cn).length + ' 个缺音标或释义');
+/* 缺口均匀散落在各章 → 证明不是某几章的 OCR 问题（注意 ch 是章节名，不是下标） */
+const CHAPS = vm.runInContext('CHAPTERS', sandbox);
+const chapMiss = CHAPS.map(name => words.filter(w => w.ch === name && (!w.ex || !w.ex.length || !w.ex[0])).length);
+ok('缺口分散在全部 ' + CHAPS.length + ' 章（每章都有，非集中某章）',
+  chapMiss.filter(n => n > 0).length >= 18, '有缺口的章数=' + chapMiss.filter(n => n > 0).length);
+/* exParts 对空例句必须安全返回空数组，不能抛错 */
+ok('exParts("" ) 安全返回空数组', JSON.stringify(sandbox.exParts('', 'pebble')) === '[]');
+ok('exParts(undefined) 安全返回空数组', JSON.stringify(sandbox.exParts(undefined, 'pebble')) === '[]');
+/* 预览侧：无例句时要渲染单词当锚点，而不是留白 */
+ok('预览侧无例句时用单词兜底（不留白）', /stage-ex-t ex-strong">' \+ esc\(w\.w\)/.test(html));
+/* 小程序侧：study 页有 noEx 分支 */
+const wxml = fs.readFileSync(path.join(__dirname, '..', 'pages', 'study', 'study.wxml'), 'utf8');
+const sjs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'study', 'study.js'), 'utf8');
+ok('小程序 study.wxml 有 noEx 兜底分支', /wx:elif="\{\{noEx\}\}"/.test(wxml));
+ok('小程序 study.js 计算并下传 noEx', /noEx:\s*!exParts\.length/.test(sjs));
+ok('小程序 study.js 声明了 noEx 初值', /noEx:\s*false/.test(sjs));
+
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);

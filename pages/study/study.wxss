@@ -68,6 +68,23 @@
   left: 0; top: 0; right: 0;
   transform: rotateY(180deg);
 }
+
+/*
+ * 命中问题（踩过，很深）：背面 .flip-back 是绝对定位、且排在 DOM 后面，
+ * 即使 backface-visibility:hidden，iOS 微信里它仍会盖在正面选项卡上方吃掉点击 ——
+ * 表现就是「从第二个单词开始，好多选项卡点了没反应」。
+ * 所以不能只靠 backface-visibility，必须显式把不该收点击的那一面关掉：
+ *   · 未翻面：背面 visibility:hidden + pointer-events:none
+ *   · 已翻面：正面 pointer-events:none（翻过去后正面本来也不该点）
+ * 用 visibility 而不是 display，是为了不破坏 preserve-3d 的层叠与过渡。
+ */
+.flip-box:not(.flip-on) .flip-back {
+  visibility: hidden;
+  pointer-events: none;
+}
+.flip-box.flip-on .flip-face:not(.flip-back) {
+  pointer-events: none;
+}
 .stage-word {
   font-size: 76rpx;
   font-weight: 700;
@@ -207,9 +224,6 @@
 .stage-cn { font-size: 34rpx; line-height: 1.6; text-align: center; }
 .stage-ch { font-size: 24rpx; color: var(--text3); margin-top: 24rpx; }
 .stage-hint { font-size: 26rpx; color: var(--text3); margin-top: 60rpx; }
-/* 翻面时正面选项不要露出（iOS 下 backface 偶发穿透） */
-.flip-box.flip-on .flip-face { pointer-events: none; }
-.flip-box.flip-on .flip-back { pointer-events: auto; }
 
 .actions { display: flex; gap: 20rpx; padding: 40rpx 24rpx 0; }
 .actions .btn { flex: 1; }
