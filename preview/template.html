@@ -81,6 +81,23 @@ body.dark .side h1{color:#fff}
 .back-btn{display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:15px;background:var(--fill);color:var(--blue);font-size:13px;cursor:pointer;user-select:none}
 .back-btn:active{opacity:.65}
 .back-cur{font-size:13px;color:var(--text2)}
+.seg{display:flex;gap:6px;margin:0 6px 14px;padding:4px;background:var(--fill);border-radius:11px}
+.seg-i{flex:1;height:34px;line-height:34px;text-align:center;font-size:13px;color:var(--text2);border-radius:8px;cursor:pointer;user-select:none}
+.seg-i.on{background:var(--card);color:var(--text);font-weight:500}
+.prompt-card{padding:18px}
+.prompt-en{font-size:19px;line-height:1.55;font-weight:500;color:var(--text)}
+.prompt-pts{margin-top:11px;padding-top:9px;border-top:1px solid var(--line)}
+.pt{font-size:14px;line-height:1.9;color:var(--text)}
+.prompt-tools{display:flex;gap:10px;margin-top:14px}
+.mini-btn{display:inline-flex;align-items:center;height:31px;padding:0 13px;border-radius:16px;background:var(--fill);color:var(--blue);font-size:13px;cursor:pointer}
+.mini-btn:active{opacity:.65}
+.rec-card{padding:22px 18px 18px;text-align:center}
+.rec-btn{display:flex;align-items:center;justify-content:center;height:56px;border-radius:28px;background:var(--blue);color:#fff;font-size:16px;font-weight:500}
+.rec-dot{width:13px;height:13px;border-radius:50%;background:#fff;margin-right:9px}
+.rec-tip{margin-top:11px;font-size:13px;color:var(--text2);line-height:1.6}
+.rec-warn{margin-top:8px;font-size:12px;color:var(--text3)}
+.card-pad{padding:16px 18px}
+.dim-note{color:var(--text3);font-size:12.5px}
 .card{background:var(--card);border-radius:14px;overflow:hidden}
 .cell{display:flex;align-items:center;min-height:52px;padding:11px 18px;background:var(--card);position:relative;cursor:pointer}
 .cell:active{background:var(--cell-hover)}
@@ -406,10 +423,12 @@ body.dark .side h1{color:#fff}
 </div>
 
 <script id="words" type="application/json">__WORDS__</script>
+<script id="speaking" type="application/json">__SPEAKING__</script>
 <script id="theme" type="application/json">__THEME__</script>
 <script>
 const DATA = JSON.parse(document.getElementById('words').textContent);
 const THEME = JSON.parse(document.getElementById('theme').textContent);
+const SPEAK = JSON.parse(document.getElementById('speaking').textContent);
 const WORDS = DATA.list;
 const CHAPTERS = DATA.chapters;
 const byWord = {};
@@ -870,12 +889,14 @@ const ICONS = {
   study: '<path d="M9 13.2l3.2 3.2L19 8.6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
   book: '<rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 6v12" stroke-width="1.6"/><path d="M12 9.5h4M12 12.5h4M12 15.5h2.6" stroke-width="1.6" stroke-linecap="round"/>',
   keyboard: '<rect x="3.5" y="7" width="17" height="10" rx="3"/><path d="M7 10.5h1M10.4 10.5h1M13.8 10.5h1M17.2 10.5h.4M7 13.5h1M10.4 13.5h1M13.8 13.5h1M17.2 13.5h.4" stroke-width="1.8" stroke-linecap="round"/><path d="M9 16.2h6" stroke-width="1.8" stroke-linecap="round"/>',
-  me: '<circle cx="12" cy="8.6" r="3.5"/><path d="M5.4 19.4a6.6 6.6 0 0113.2 0" stroke-width="2"/>'
+  me: '<circle cx="12" cy="8.6" r="3.5"/><path d="M5.4 19.4a6.6 6.6 0 0113.2 0" stroke-width="2"/>',
+  speech: '<rect x="9" y="3.5" width="6" height="10" rx="3" stroke-width="2"/><path d="M5.5 11.5a6.5 6.5 0 0013 0M12 17.5v3.2M8.5 21h7" stroke-width="2" stroke-linecap="round"/>'
 };
 const TABS = [
   { id: 'learn', label: '学习', icon: 'study' },
   { id: 'vocab', label: '词库', icon: 'book' },
   { id: 'spell', label: '拼写', icon: 'keyboard' },
+  { id: 'speaking', label: '口语', icon: 'speech' },
   { id: 'me', label: '我的', icon: 'me' }
 ];
 
@@ -902,6 +923,11 @@ function go(tab) {
   if (tab === 'learn') return show('learn');
   if (tab === 'vocab') { cur.chapter = ''; cur.keyword = ''; return show('vocab'); }
   if (tab === 'spell') return startSpell();
+  if (tab === 'speaking') {
+    cur.spkRead = spkPickRead();
+    cur.spkExam = spkPickExam();
+    return show('speaking');
+  }
   if (tab === 'me') return show('me');
 }
 function show(screen, back) {
@@ -914,7 +940,7 @@ function render() {
   applyTheme();
   const s = $('screen');
   const nav = $('navTitle');
-  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', expand: '单词拓展', study: '记忆单词', spell: '拼写自测', me: '我的', privacy: '用户协议与隐私政策', match: '意思匹配' };
+  const titles = { learn: '雅思词汇', vocab: '词库', detail: '单词详情', expand: '单词拓展', study: '记忆单词', spell: '拼写自测', speaking: '口语练习', me: '我的', privacy: '用户协议与隐私政策', match: '意思匹配' };
   nav.textContent = titles[cur.screen] || '雅思词汇';
   let backBtn = $('nav').querySelector('.back');
   if (backBtn) backBtn.remove();
@@ -925,7 +951,7 @@ function render() {
     b.onclick = () => show(cur.back);
     $('nav').prepend(b);
   }
-  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, expand: vExpand, study: vStudy, spell: vSpell, me: vMe, privacy: vPrivacy, match: vMatch }[cur.screen])();
+  s.innerHTML = ({ learn: vLearn, vocab: vVocab, detail: vDetail, expand: vExpand, study: vStudy, spell: vSpell, speaking: vSpeaking, me: vMe, privacy: vPrivacy, match: vMatch }[cur.screen])();
   bind(s);
   renderTabs();
   s.scrollTop = 0;
@@ -1621,6 +1647,99 @@ function vStudy() {
         : '<div class="actions-hint">先选出正确的中文释义</div>');
 }
 
+/* ---------------- 口语练习 ---------------- */
+
+const SPK_KINDS = [
+  { id: 'p1', label: 'Part 1 · 日常问答' },
+  { id: 'p2', label: 'Part 2 · 个人陈述' },
+  { id: 'p3', label: 'Part 3 · 深入讨论' }
+];
+
+function spkPicked() { return WORDS.filter(w => w.ex && w.ex[0]); }
+
+function spkPickRead() {
+  const list = spkPicked();
+  if (!list.length) return null;
+  const w = list[Math.floor(Math.random() * list.length)];
+  return { en: exText(w.ex[0]), zh: w.ex[1] || '', from: w.w + (w.ch ? ' · ' + w.ch : '') };
+}
+
+function spkPickExam() {
+  const kind = cur.spkKind || 'p1';
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  if (kind === 'p1') {
+    const t = pick(SPEAK.part1 || []);
+    if (!t) return null;
+    const q = pick(t.questions);
+    return { topic: t.topic + ' / ' + t.topicEn, en: q.en, points: [] };
+  }
+  if (kind === 'p2') {
+    const c = pick(SPEAK.part2 || []);
+    if (!c) return null;
+    return { topic: c.topic, en: c.card.title, points: c.card.points || [] };
+  }
+  const withP3 = (SPEAK.part2 || []).filter(c => c.part3 && c.part3.length);
+  const c = pick(withP3);
+  if (!c) return null;
+  const q = pick(c.part3);
+  return { topic: c.topic + ' · Part 3', en: q.en, points: [] };
+}
+
+function vSpeaking() {
+  const mode = cur.spkMode || 'read';
+  if (mode === 'read' && !cur.spkRead) cur.spkRead = spkPickRead();
+  if (mode === 'exam' && !cur.spkExam) cur.spkExam = spkPickExam();
+
+  let prompt = '', pts = [], from = '';
+  if (mode === 'read') {
+    const r = cur.spkRead;
+    prompt = r ? r.en : '词库里还没有例句';
+    pts = r && r.zh ? [r.zh] : [];
+    from = r ? r.from : '';
+  } else {
+    const e = cur.spkExam;
+    prompt = e ? e.en : '题库为空';
+    pts = e ? e.points : [];
+    from = e ? e.topic : '';
+  }
+
+  let body = '<div class="h1">口语练习</div>'
+    + '<div class="h2">跟着念，或者让 AI 考官出题后自由作答</div>'
+    + '<div class="seg"><div class="seg-i' + (mode === 'read' ? ' on' : '') + '" data-act="spkmode" data-m="read">跟读评测</div>'
+    + '<div class="seg-i' + (mode === 'exam' ? ' on' : '') + '" data-act="spkmode" data-m="exam">AI 考官</div></div>';
+
+  if (mode === 'exam') {
+    const k = cur.spkKind || 'p1';
+    body += '<div class="group"><div class="group-title">题目类型</div><div class="card">'
+      + SPK_KINDS.map(x => '<div class="cell" data-act="spkkind" data-k="' + x.id + '"><div class="cell-main">'
+        + '<div class="cell-title">' + x.label + '</div></div>'
+        + (k === x.id ? '<span class="chk">✓</span>' : '') + '</div>').join('')
+      + '</div></div>';
+  }
+
+  body += '<div class="group"><div class="group-title">' + (mode === 'read' ? '跟读句子' : '考官题目')
+    + (from ? '<span class="group-hint">' + esc(from) + '</span>' : '') + '</div>'
+    + '<div class="card prompt-card"><div class="prompt-en">' + esc(prompt) + '</div>'
+    + (pts.length ? '<div class="prompt-pts">' + pts.map(p => '<div class="pt">· ' + esc(p) + '</div>').join('') + '</div>' : '')
+    + '<div class="prompt-tools">'
+    + '<span class="mini-btn" data-act="spklisten">' + (mode === 'read' ? '听一遍' : '念题') + '</span>'
+    + '<span class="mini-btn" data-act="spknext">换一题</span>'
+    + '</div></div></div>';
+
+  body += '<div class="group"><div class="card rec-card">'
+    + '<div class="rec-btn"><span class="rec-dot"></span><span class="rec-txt">开始朗读</span></div>'
+    + '<div class="rec-tip">' + (mode === 'read' ? '跟读上面这句话，会从发音、流利度、完整度、语调四个维度评分。' : '这是考官抽到的题目，准备好后直接口述作答。') + '</div>'
+    + '<div class="rec-warn">浏览器里无法录音评测，这部分要在小程序真机上测</div>'
+    + '</div></div>';
+
+  body += '<div class="group"><div class="group-title">评测结果</div><div class="card"><div class="card-pad">'
+    + '<div class="dsec-p">真机作答后，这里会显示总分和四个维度的得分：发音准确度、流利度、完整度、语调，并给一句针对性的改进建议。</div>'
+    + '<div class="dsec-p dim-note">评测由讯飞语音评测提供（每日 500 次免费额度）。</div>'
+    + '</div></div></div>';
+
+  return body;
+}
+
 function vSpell() {
   if (!spell) return '';
   if (spell.done) {
@@ -1942,6 +2061,28 @@ function act(a, el) {
   }
   if (a === 'popspeak') { if (popWord) speak(popWord.w); return; }
   if (a === 'backch') { cur.chapter = ''; cur.keyword = ''; cur.tab = 'vocab'; return show('vocab'); }
+  if (a === 'spkmode') {
+    cur.spkMode = el.dataset.m;
+    if (cur.spkMode === 'read') cur.spkRead = spkPickRead();
+    else cur.spkExam = spkPickExam();
+    return render();
+  }
+  if (a === 'spkkind') {
+    cur.spkKind = el.dataset.k;
+    cur.spkExam = spkPickExam();
+    return render();
+  }
+  if (a === 'spknext') {
+    if ((cur.spkMode || 'read') === 'read') cur.spkRead = spkPickRead();
+    else cur.spkExam = spkPickExam();
+    return render();
+  }
+  if (a === 'spklisten') {
+    const t = (cur.spkMode || 'read') === 'read'
+      ? (cur.spkRead && cur.spkRead.en) : (cur.spkExam && cur.spkExam.en);
+    if (t) speak(t);
+    return;
+  }
   if (a === 'learn') {
     cur.startIdx = -1;
     study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false, opts: [], optsWord: '', picked: false };

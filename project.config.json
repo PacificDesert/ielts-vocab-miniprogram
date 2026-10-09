@@ -1,6 +1,6 @@
 {
   "description": "雅思词汇 · 微信小程序（云开发后端）",
-  "appid": "touristappid",
+  "appid": "wx8a7ac0c3edd0fb55",
   "projectname": "ielts-vocab",
   "compileType": "miniprogram",
   "libVersion": "3.5.5",
@@ -19,6 +19,7 @@
       { "type": "folder", "value": "preview" },
       { "type": "folder", "value": "tools" },
       { "type": "folder", "value": "cloudfunctions" },
+      { "type": "file", "value": "data/words.ecdict.js" },
       { "type": "file", "value": "README.md" },
       { "type": "file", "value": "LICENSE" },
       { "type": "file", "value": ".gitignore" },

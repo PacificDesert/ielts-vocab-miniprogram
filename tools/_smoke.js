@@ -54,12 +54,15 @@ const navTitle = makeEl('div');
 const tabsEl = makeEl('div');
 const wordsEl = makeEl('script');
 const themeEl = makeEl('script');
+const speakEl = makeEl('script');
 
-/* 词库与章节配图从页面里的 <script id="words"> picker / <script id="theme"> 里读 */
+/* 词库 / 章节配图 / 口语题库分别从页面里的 <script id="..."> 读 */
 const dataBlock = html.match(/<script id="words"[^>]*>([\s\S]*?)<\/script>/);
 const themeBlock = html.match(/<script id="theme"[^>]*>([\s\S]*?)<\/script>/);
+const speakBlock = html.match(/<script id="speaking"[^>]*>([\s\S]*?)<\/script>/);
 wordsEl.textContent = dataBlock ? dataBlock[1] : '{"chapters":[],"list":[]}';
 themeEl.textContent = themeBlock ? themeBlock[1] : '{}';
+speakEl.textContent = speakBlock ? speakBlock[1] : '{"part1":[],"part2":[]}';
 
 /**
  * 造一份全新的脚本作用域（含 DOM 桩）。
@@ -70,7 +73,7 @@ function makeSandbox() {
   const screen = makeEl('div');
   const byId = {
     screen, nav: makeEl('div'), navTitle: makeEl('div'), tabs: makeEl('div'),
-    tabbar: makeEl('div'), words: wordsEl, theme: themeEl,
+    tabbar: makeEl('div'), words: wordsEl, theme: themeEl, speaking: speakEl,
     toast: makeEl('div'), phone: makeEl('div')
   };
   const document = {
@@ -110,7 +113,7 @@ function makeSandbox() {
 
 const byId = {
   screen: screenEl, nav: navEl, navTitle: navTitle, tabs: tabsEl,
-  tabbar: tabsEl, words: wordsEl, theme: themeEl,
+  tabbar: tabsEl, words: wordsEl, theme: themeEl, speaking: speakEl,
   toast: makeEl('div'), phone: makeEl('div')
 };
 const document = {

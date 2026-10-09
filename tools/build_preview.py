@@ -61,12 +61,20 @@ def main():
 
     dump = lambda o: json.dumps(o, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c')
     html = io.open(TPL, encoding='utf-8').read()
-    for token in ('__WORDS__', '__THEME__'):
+    for token in ('__WORDS__', '__THEME__', '__SPEAKING__'):
         if token not in html:
             sys.exit('template.html 里找不到 %s 占位符' % token)
 
+    # 口语题库（预览端的「口语」页要用）
+    spk_path = os.path.join(ROOT, 'data', 'speaking.js')
+    spk = {'part1': [], 'part2': []}
+    if os.path.exists(spk_path):
+        raw2 = io.open(spk_path, encoding='utf-8').read()
+        spk = json.loads(raw2[raw2.index('{'): raw2.rindex('}') + 1])
+
     html = html.replace('__WORDS__', dump({'chapters': data['chapters'], 'list': data['list']}))
     html = html.replace('__THEME__', dump(data['theme']))
+    html = html.replace('__SPEAKING__', dump(spk))
 
     with io.open(DST, 'w', encoding='utf-8') as f:
         f.write(html)
