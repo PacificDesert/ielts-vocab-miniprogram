@@ -750,5 +750,50 @@ dataObj.list.forEach(it => {
 ok('中文例句里没有汉字夹空格（原 1301 条）', zhGap === 0);
 ok('英文例句里没有 OCR 粘连（原 10 条）', enGap.length === 0, enGap.slice(0, 5).join(', '));
 
+console.log('\n[18] 口语练习 + 讯飞评测');
+
+const appJson = fs.readFileSync(path.join(__dirname, '..', 'app.json'), 'utf8');
+const spkJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'speaking', 'speaking.js'), 'utf8');
+const spkWxml = fs.readFileSync(path.join(__dirname, '..', 'pages', 'speaking', 'speaking.wxml'), 'utf8');
+const cfgJs = fs.readFileSync(path.join(__dirname, '..', 'config.js'), 'utf8');
+const fnJs = fs.readFileSync(path.join(__dirname, '..', 'cloudfunctions', 'speech', 'index.js'), 'utf8');
+const spkData = require(path.join(__dirname, '..', 'data', 'speaking.js'));
+
+// 页面与 tab
+ok('app.json 注册了口语页', /pages\/speaking\/speaking/.test(appJson));
+ok('tabBar 加了「口语」', /"text":\s*"口语"/.test(appJson));
+ok('口语 tab 图标存在', fs.existsSync(path.join(__dirname, '..', 'images', 'tabbar', 'speech.png'))
+  && fs.existsSync(path.join(__dirname, '..', 'images', 'tabbar', 'speech_on.png')));
+
+// 题库
+const q1 = spkData.part1.reduce((a, t) => a + t.questions.length, 0);
+const q3 = spkData.part2.reduce((a, c) => a + (c.part3 ? c.part3.length : 0), 0);
+ok('题库 Part1 = 15 话题', spkData.part1.length === 15);
+ok('题库 Part1 = 63 问', q1 === 63);
+ok('题库 Part2 = 14 题卡', spkData.part2.length === 14);
+ok('题库 Part3 = 15 讨论题', q3 === 15);
+ok('题库未混入中文题面', !spkData.part1.some(t => t.questions.some(q => /[\u4e00-\u9fa5]/.test(q.en))));
+
+// 页面能力
+ok('口语页有模式切换（跟读/考官）', /onMode/.test(spkJs) && /AI 考官/.test(spkWxml));
+ok('口语页用 RecorderManager 录音', /getRecorderManager/.test(spkJs));
+ok('录音按讯飞要求配置 16k/单声道', /sampleRate:\s*16000/.test(spkJs) && /numberOfChannels:\s*1/.test(spkJs));
+ok('录音走云函数送评', /wx\.cloud\.callFunction/.test(spkJs));
+ok('未配置云环境时降级提示', /未配置云环境/.test(spkJs));
+ok('口语页离开时停声（onHide）', /onHide\(\)\s*\{[\s\S]{0,200}?audio\.stop\(\)/.test(spkJs));
+
+// 安全：密钥绝不能出现在前端。
+// 注意只能查「有没有真的赋值」—— 注释里提到变量名是说明它该放哪，属正常。
+ok('config 里没有讯飞密钥赋值', !/XF_APPID\s*[:=]\s*['"]/.test(cfgJs)
+  && !/XF_APIKEY\s*[:=]\s*['"]/.test(cfgJs) && !/XF_APISECRET\s*[:=]\s*['"]/.test(cfgJs));
+ok('config 里没有硬编码的 appid 值', !/appid\s*[:=]\s*['"][^'"]{6,}['"]/i.test(cfgJs));
+ok('云函数从环境变量取密钥', /process\.env\.XF_APPID/.test(fnJs)
+  && /process\.env\.XF_APIKEY/.test(fnJs) && /process\.env\.XF_APISECRET/.test(fnJs));
+ok('云函数用 HMAC-SHA256 签名', /createHmac\('sha256'/.test(fnJs));
+ok('云函数连的是讯飞 ise 接口', /ise-api\.xfyun\.cn/.test(fnJs));
+ok('云函数对英文文本加 BOM', /\\uFEFF\[content\]/.test(fnJs));
+ok('云函数有超时保护', /评测超时/.test(fnJs));
+ok('语音评测云函数有 package.json', fs.existsSync(path.join(__dirname, '..', 'cloudfunctions', 'speech', 'package.json')));
+
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);

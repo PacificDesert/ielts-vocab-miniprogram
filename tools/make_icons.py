@@ -101,10 +101,19 @@ def icon_me(cv, c):
     cv.ring(40.5, 63, 23, 11, c, 270, 90)
 
 
+def icon_speech(cv, c):
+    """麦克风：话筒头 + 半圆支架 + 立杆 + 底座"""
+    cv.rrect(33, 14, 48, 44, 7.5, c)          # 话筒头
+    cv.ring(40.5, 42, 15, 4, c, 90, 270)      # 下半圆支架（90°=正右，270°=正左）
+    cv.rrect(38.5, 56, 42.5, 65, 2, c)        # 立杆
+    cv.rrect(30, 64, 51, 68, 2, c)            # 底座
+
+
 ICONS = {
     'study': icon_study,
     'book': icon_book,
     'keyboard': icon_keyboard,
+    'speech': icon_speech,
     'me': icon_me
 }
 

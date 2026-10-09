@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/vocab/vocab",
     "pages/spell/spell",
+    "pages/speaking/speaking",
     "pages/me/me",
     "pages/study/study",
     "pages/detail/detail",
@@ -40,6 +41,12 @@
         "text": "拼写",
         "iconPath": "images/tabbar/keyboard.png",
         "selectedIconPath": "images/tabbar/keyboard_on.png"
+      },
+      {
+        "pagePath": "pages/speaking/speaking",
+        "text": "口语",
+        "iconPath": "images/tabbar/speech.png",
+        "selectedIconPath": "images/tabbar/speech_on.png"
       },
       {
         "pagePath": "pages/me/me",

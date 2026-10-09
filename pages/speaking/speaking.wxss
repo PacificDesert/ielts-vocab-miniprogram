@@ -1,0 +1,118 @@
+/* ==== 模式切换 ==== */
+.seg {
+  display: flex;
+  margin: 0 32rpx 24rpx;
+  padding: 6rpx;
+  background: var(--fill);
+  border-radius: 20rpx;
+}
+.seg-item {
+  flex: 1;
+  height: 68rpx;
+  line-height: 68rpx;
+  text-align: center;
+  font-size: 29rpx;
+  color: var(--text2);
+  border-radius: 15rpx;
+}
+.seg-item.on {
+  background: var(--card);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.group-hint { font-size: 22rpx; color: var(--text3); font-weight: 400; margin-left: 12rpx; }
+
+/* ==== 题目卡 ==== */
+.prompt-card { padding: 36rpx 32rpx; }
+.prompt-en {
+  font-size: 38rpx;
+  line-height: 1.55;
+  font-weight: 500;
+  color: var(--text);
+}
+.prompt-zh {
+  margin-top: 18rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: var(--text2);
+}
+.prompt-points { margin-top: 22rpx; padding-top: 18rpx; border-top: 2rpx solid var(--line); }
+.point { font-size: 29rpx; line-height: 1.9; color: var(--text); }
+
+.prompt-tools { display: flex; gap: 20rpx; margin-top: 28rpx; }
+.mini-btn {
+  display: flex;
+  align-items: center;
+  height: 62rpx;
+  padding: 0 26rpx;
+  border-radius: 31rpx;
+  background: var(--fill);
+  color: var(--blue);
+  font-size: 27rpx;
+}
+.mini-icon {
+  width: 0; height: 0;
+  border-left: 16rpx solid var(--blue);
+  border-top: 11rpx solid transparent;
+  border-bottom: 11rpx solid transparent;
+  margin-right: 14rpx;
+}
+
+/* ==== 录音 ==== */
+.rec-card { padding: 44rpx 32rpx 36rpx; }
+.rec-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 132rpx;
+  border-radius: 66rpx;
+  background: var(--blue);
+  color: #FFFFFF;
+}
+.rec-btn.on { background: var(--red, #FF3B30); }
+.rec-dot {
+  width: 26rpx; height: 26rpx;
+  border-radius: 50%;
+  background: #FFFFFF;
+  margin-right: 18rpx;
+}
+.rec-text { font-size: 34rpx; font-weight: 500; }
+.rec-tip {
+  margin-top: 22rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--text2);
+}
+
+/* ==== 评分 ==== */
+.score-card { padding: 36rpx 32rpx; }
+.score-total { display: flex; align-items: baseline; justify-content: center; }
+.score-num { font-size: 96rpx; font-weight: 600; color: var(--blue); line-height: 1; }
+.score-unit { font-size: 30rpx; color: var(--text2); margin-left: 10rpx; }
+
+.score-dims { margin-top: 36rpx; }
+.dim { display: flex; align-items: center; margin-bottom: 20rpx; }
+.dim-name { width: 170rpx; font-size: 27rpx; color: var(--text2); flex: none; }
+.dim-bar {
+  flex: 1;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: var(--fill);
+  overflow: hidden;
+  margin-right: 18rpx;
+}
+.dim-fill { height: 100%; background: var(--blue); border-radius: 8rpx; }
+.dim-val { width: 60rpx; text-align: right; font-size: 27rpx; color: var(--text); flex: none; }
+
+.score-advice {
+  margin-top: 26rpx;
+  padding-top: 24rpx;
+  border-top: 2rpx solid var(--line);
+  font-size: 28rpx;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.empty-inline { padding: 40rpx 0; text-align: center; font-size: 28rpx; color: var(--text2); }
+.check { font-size: 34rpx; color: var(--blue); font-weight: 500; }

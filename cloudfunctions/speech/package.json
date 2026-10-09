@@ -1,0 +1,9 @@
+{
+  "name": "speech",
+  "version": "1.0.0",
+  "description": "口语评测：代理讯飞语音评测 WebSocket 接口（密钥走环境变量）",
+  "main": "index.js",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

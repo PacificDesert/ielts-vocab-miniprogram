@@ -1,0 +1,101 @@
+<view class="page {{themeClass}}">
+  <view class="h1">口语练习</view>
+  <view class="h2">跟着念，或者让 AI 考官出题后自由作答</view>
+
+  <!-- 模式切换 -->
+  <view class="seg">
+    <view class="seg-item {{mode === 'read' ? 'on' : ''}}" data-m="read" bindtap="onMode">跟读评测</view>
+    <view class="seg-item {{mode === 'exam' ? 'on' : ''}}" data-m="exam" bindtap="onMode">AI 考官</view>
+  </view>
+
+  <!-- ============ 跟读评测 ============ -->
+  <block wx:if="{{mode === 'read'}}">
+    <view class="group">
+      <view class="group-title">
+        跟读句子
+        <text class="group-hint">{{readFrom}}</text>
+      </view>
+      <view class="card prompt-card">
+        <view class="prompt-en">{{readEn}}</view>
+        <view class="prompt-zh" wx:if="{{readZh}}">{{readZh}}</view>
+        <view class="prompt-tools">
+          <view class="mini-btn" hover-class="btn-hover" bindtap="readSpeak">
+            <view class="mini-icon"></view>
+            <text>听一遍</text>
+          </view>
+          <view class="mini-btn" hover-class="btn-hover" bindtap="nextRead">换一句</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ============ AI 考官 ============ -->
+  <block wx:else>
+    <view class="group">
+      <view class="group-title">选择题目类型</view>
+      <view class="card">
+        <view class="cell" wx:for="{{examKinds}}" wx:key="id" data-id="{{item.id}}" bindtap="onExamKind">
+          <view class="cell-main">
+            <view class="cell-title">{{item.label}}</view>
+            <view class="cell-sub">{{item.sub}}</view>
+          </view>
+          <text class="check" wx:if="{{examKind === item.id}}">✓</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="group" wx:if="{{examTopic}}">
+      <view class="group-title">
+        考官题目
+        <text class="group-hint">{{examTopic}}</text>
+      </view>
+      <view class="card prompt-card">
+        <view class="prompt-en">{{examEn}}</view>
+        <view class="prompt-points" wx:if="{{examPoints.length}}">
+          <view class="point" wx:for="{{examPoints}}" wx:key="index">· {{item}}</view>
+        </view>
+        <view class="prompt-tools">
+          <view class="mini-btn" hover-class="btn-hover" bindtap="readSpeak">
+            <view class="mini-icon"></view>
+            <text>念题</text>
+          </view>
+          <view class="mini-btn" hover-class="btn-hover" bindtap="nextExam">换一题</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ============ 录音区 ============ -->
+  <view class="group">
+    <view class="card rec-card">
+      <view class="rec-btn {{recording ? 'on' : ''}}" hover-class="btn-hover" bindtap="toggleRec">
+        <view class="rec-dot"></view>
+        <text class="rec-text">{{recording ? '停止录音' : '开始朗读'}}</text>
+      </view>
+      <view class="rec-tip">{{recTip}}</view>
+    </view>
+  </view>
+
+  <!-- ============ 评分结果 ============ -->
+  <view class="group" wx:if="{{score}}">
+    <view class="group-title">评测结果</view>
+    <view class="card score-card">
+      <view class="score-total">
+        <text class="score-num">{{score.total}}</text>
+        <text class="score-unit">分</text>
+      </view>
+      <view class="score-dims">
+        <view class="dim" wx:for="{{score.dims}}" wx:key="name">
+          <view class="dim-name">{{item.name}}</view>
+          <view class="dim-bar"><view class="dim-fill" style="width:{{item.value}}%"></view></view>
+          <view class="dim-val">{{item.value}}</view>
+        </view>
+      </view>
+      <view class="score-advice" wx:if="{{score.advice}}">{{score.advice}}</view>
+    </view>
+  </view>
+
+  <view class="group" wx:if="{{scoring}}">
+    <view class="card"><view class="empty-inline">正在评测…</view></view>
+  </view>
+</view>
