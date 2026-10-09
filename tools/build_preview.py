@@ -6,13 +6,14 @@
 
 读取 data/words.js 与 images/theme/*.jpg，注入 preview/template.html，
 输出 preview/index.html（自包含，章节配图以 data URI 内联）。
+
+也可以用 --src / --dst 指向别的词库，生成独立预览（不影响现有页面）：
+    python tools/build_preview.py --src data/words.ecdict.js --dst preview/ecdict.html
 """
-import base64, io, json, os, sys
+import argparse, base64, io, json, os, sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-SRC = os.path.join(ROOT, 'data', 'words.js')
 TPL = os.path.join(ROOT, 'preview', 'template.html')
-DST = os.path.join(ROOT, 'preview', 'index.html')
 THEME = os.path.join(ROOT, 'images', 'theme')
 # 预览用的缩略图尺寸，避免内联后文件过大
 THUMB = (420, 236)
@@ -40,6 +41,14 @@ def theme_data(chapters):
 
 
 def main():
+    ap = argparse.ArgumentParser(description='生成浏览器界面预览')
+    ap.add_argument('--src', default=os.path.join(ROOT, 'data', 'words.js'),
+                    help='词库文件（默认 data/words.js）')
+    ap.add_argument('--dst', default=os.path.join(ROOT, 'preview', 'index.html'),
+                    help='输出 HTML（默认 preview/index.html）')
+    args = ap.parse_args()
+    SRC, DST = args.src, args.dst
+
     for p in (SRC, TPL):
         if not os.path.exists(p):
             sys.exit('缺少文件：%s' % p)

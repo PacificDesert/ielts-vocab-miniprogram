@@ -34,8 +34,8 @@
 
   <!-- 单词列表 -->
   <block wx:else>
-    <view class="list-head" wx:if="{{mode === 'chapter'}}" bindtap="backToChapters">
-      <text class="back">‹ 全部章节</text>
+    <view class="list-head" wx:if="{{mode === 'chapter'}}">
+      <view class="back-btn" hover-class="btn-hover" catchtap="backToChapters">‹ 全部章节</view>
       <text class="list-title">{{chapter}}</text>
     </view>
     <view class="group" wx:if="{{list.length}}">

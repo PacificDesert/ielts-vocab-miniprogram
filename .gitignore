@@ -5,3 +5,6 @@ Thumbs.db
 *.log
 project.private.config.json
 tools/.cache/
+
+# 冒烟测试产物
+tools/_smoke_out.txt

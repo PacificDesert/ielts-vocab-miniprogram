@@ -77,6 +77,10 @@ body.dark .side h1{color:#fff}
 .h2{padding:0 18px 14px;font-size:13px;color:var(--text2)}
 .group{margin:0 14px 16px}
 .group-title{padding:4px 6px 8px;font-size:12px;color:var(--text2);letter-spacing:.5px}
+.back-row{display:flex;align-items:center;gap:10px;padding:0 6px 12px}
+.back-btn{display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:15px;background:var(--fill);color:var(--blue);font-size:13px;cursor:pointer;user-select:none}
+.back-btn:active{opacity:.65}
+.back-cur{font-size:13px;color:var(--text2)}
 .card{background:var(--card);border-radius:14px;overflow:hidden}
 .cell{display:flex;align-items:center;min-height:52px;padding:11px 18px;background:var(--card);position:relative;cursor:pointer}
 .cell:active{background:var(--cell-hover)}
@@ -979,7 +983,11 @@ function vVocab() {
   if (cur.keyword) {
     body = wordList(search(cur.keyword), '没有匹配的单词');
   } else if (cur.chapter) {
-    body = '<div class="group"><div class="group-title">' + cur.chapter + ' · ' + WORDS.filter(w => w.ch === cur.chapter).length + ' 词</div>'
+    body = '<div class="back-row">'
+      + '<span class="back-btn" data-act="backch">‹ 全部章节</span>'
+      + '<span class="back-cur">' + esc(cur.chapter) + '</span>'
+      + '</div>'
+      + '<div class="group"><div class="group-title">' + cur.chapter + ' · ' + WORDS.filter(w => w.ch === cur.chapter).length + ' 词</div>'
       + wordList(WORDS.filter(w => w.ch === cur.chapter), '') + '</div>';
   } else {
     body = '<div class="group"><div class="card">'
@@ -1875,7 +1883,9 @@ function sec(t, ps) {
 function bind(s) {
   s.querySelectorAll('[data-ch]').forEach(el => el.onclick = () => {
     cur.chapter = el.dataset.ch; cur.keyword = ''; cur.tab = 'vocab';
-    show('vocab', 'learn');
+    /* 不设 back：还在「词库」这个 tab 内，用页面里的「全部章节」回退，
+       设成 'learn' 会让导航栏的返回把用户带到学习页，等于出不去 */
+    show('vocab');
   });
   s.querySelectorAll('[data-w]').forEach(el => el.onclick = () => {
     cur.word = byWord[el.dataset.w.toLowerCase()];
@@ -1931,6 +1941,7 @@ function act(a, el) {
     return show('detail', cur.back);
   }
   if (a === 'popspeak') { if (popWord) speak(popWord.w); return; }
+  if (a === 'backch') { cur.chapter = ''; cur.keyword = ''; cur.tab = 'vocab'; return show('vocab'); }
   if (a === 'learn') {
     cur.startIdx = -1;
     study = { list: nextLearn(S.plan), idx: 0, show: false, right: 0, wrong: 0, done: false, opts: [], optsWord: '', picked: false };

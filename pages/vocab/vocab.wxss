@@ -27,8 +27,19 @@
 .search-ph { color: var(--text2); }
 .search-clear { padding: 0 6rpx; font-size: 40rpx; color: var(--text2); line-height: 1; }
 
-.list-head { display: flex; align-items: baseline; padding: 0 32rpx 16rpx; }
-.back { font-size: 28rpx; color: var(--blue); margin-right: 20rpx; }
+.list-head { display: flex; align-items: center; padding: 0 32rpx 20rpx; }
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 60rpx;
+  padding: 0 28rpx;
+  margin-right: 20rpx;
+  border-radius: 30rpx;
+  background: var(--fill);
+  color: var(--blue);
+  font-size: 28rpx;
+  flex: none;
+}
 .list-title { font-size: 34rpx; font-weight: 600; }
 
 .word-row {

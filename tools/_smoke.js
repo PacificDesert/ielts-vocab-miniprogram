@@ -674,10 +674,15 @@ ok('老版本数据补 profile 默认值', /state\.profile\s*=\s*Object\.assign/
 ok('setProfile 对昵称限长', /\.slice\(0,\s*20\)/.test(storeJs));
 ok('setProfile 会触发同步', /function setProfile[\s\S]{0,400}scheduleSync\(\)/.test(storeJs));
 
-// 微信新规：头像必须 chooseAvatar 按钮，昵称必须 type="nickname"
+// 微信新规：头像必须 chooseAvatar 按钮。
+// 昵称**不能用 type="nickname"** —— 那个组件只允许选微信昵称、不能自由输入，
+// 用户明确要求能自由改名，所以改成普通 input + bindinput 实时同步。
 ok('头像用 open-type="chooseAvatar"', /open-type="chooseAvatar"/.test(meWxml));
 ok('头像绑定了 bindchooseavatar', /bindchooseavatar="onChooseAvatar"/.test(meWxml));
-ok('昵称输入框 type="nickname"', /type="nickname"/.test(meWxml));
+ok('昵称是可自由输入的普通输入框（没有 type=nickname）', !/type="nickname"/.test(meWxml));
+ok('昵称用缓冲字段 + bindinput 实时同步', /value="\{\{nickInput\}\}"/.test(meWxml) && /bindinput="onNickInput"/.test(meWxml));
+ok('昵称限长 20 字', /maxlength="20"/.test(meWxml));
+ok('me.js 有 onNickInput 实时同步', /onNickInput\s*\(/.test(meJs));
 ok('me.js 处理头像回调并持久化', /saveFile\s*\(/.test(meJs) && /tempFilePath:\s*url/.test(meJs));
 ok('me.js 处理昵称回调', /onNickname\s*\(/.test(meJs));
 ok('按钮默认样式已清掉（::after 边框）', /\.avatar-btn::after\s*\{\s*border:\s*none/.test(meWxss));
@@ -708,8 +713,42 @@ ok('拼写页 onError 会提示并收起高亮', /onError\(err\s*=>\s*\{[\s\S]{0
 ok('拼写页有兜底定时器收回高亮', /_speakTimer/.test(spellJs));
 ok('拼写页 play 包了 try/catch', /try\s*\{\s*this\.audio\.play\(\)/.test(spellJs));
 
-// 从别的页面切回来，未作答时应补读
-ok('拼写页 onShow 补读当前词', /onShow\(\)\s*\{[\s\S]{0,400}?this\.speakWord\(this\.data\.cur\.w\)/.test(spellJs));
+// 拼写页**不自动朗读**：看到中文就把读音放出来等于送答案。
+// 想听得用户自己点卡上的小喇叭（onSpeak）。
+ok('拼写页不再自动朗读（onShow 不补读）', !/onShow\(\)\s*\{[\s\S]{0,500}?this\.speakWord\(this\.data\.cur\.w\)/.test(spellJs));
+ok('拼写页换词时不自动朗读（sync 里没有自动 speakWord）', !/sync\(\)\s*\{[\s\S]{0,900}?if\s*\(this\.data\.canSpeak\s*&&\s*cur\.w\)\s*this\.speakWord/.test(spellJs));
+ok('拼写页保留手动发音入口', /onSpeak\s*\(/.test(spellJs));
+
+console.log('\n[17] 词库页返回 + 例句质量');
+
+const vocabWxml = fs.readFileSync(path.join(__dirname, '..', 'pages', 'vocab', 'vocab.wxml'), 'utf8');
+const vocabWxss = fs.readFileSync(path.join(__dirname, '..', 'pages', 'vocab', 'vocab.wxss'), 'utf8');
+const vocabJs = fs.readFileSync(path.join(__dirname, '..', 'pages', 'vocab', 'vocab.js'), 'utf8');
+const tplSrc = fs.readFileSync(path.join(__dirname, '..', 'preview', 'template.html'), 'utf8');
+
+// 小程序端：进了章节后要有明显的返回入口
+ok('小程序词库页有返回按钮', /back-btn[\s\S]{0,80}backToChapters/.test(vocabWxml));
+ok('返回按钮是胶囊样式（不是纯文字）', /\.back-btn\s*\{[\s\S]{0,300}?border-radius:\s*30rpx/.test(vocabWxss));
+ok('vocab.js 有 backToChapters', /backToChapters\s*\(\)\s*\{[\s\S]{0,160}?chapter:\s*''/.test(vocabJs));
+
+// 预览端：原来点章节后 show('vocab','learn')，导航栏返回会把人带去学习页 → 出不去
+ok('预览端不把返回目标设成 learn（否则出不去）', !/cur\.chapter\s*=\s*el\.dataset\.ch[\s\S]{0,160}?show\('vocab',\s*'learn'\)/.test(tplSrc));
+ok('预览端章节页有「全部章节」按钮', /data-act="backch"/.test(tplSrc));
+ok('预览端 backch 会清空 chapter', /a === 'backch'[\s\S]{0,80}?cur\.chapter\s*=\s*''/.test(tplSrc));
+
+// 例句质量：OCR 遗留的空格问题不能回归
+const wordsSrc = fs.readFileSync(path.join(__dirname, '..', 'data', 'words.js'), 'utf8');
+const dataObj = JSON.parse(wordsSrc.slice(wordsSrc.indexOf('{'), wordsSrc.lastIndexOf('}') + 1));
+let zhGap = 0, enGap = [];
+dataObj.list.forEach(it => {
+  if (!it.ex) return;
+  if (/[\u4e00-\u9fa5][ \t]+[\u4e00-\u9fa5]/.test(it.ex[1] || '')) zhGap += 1;
+  const m = (it.ex[0] || '').match(/[a-z][A-Z]/g);
+  // McDonald's 这类专有名词的大小写是正常的
+  if (m && !/McDonald/.test(it.ex[0])) enGap.push(it.w);
+});
+ok('中文例句里没有汉字夹空格（原 1301 条）', zhGap === 0);
+ok('英文例句里没有 OCR 粘连（原 10 条）', enGap.length === 0, enGap.slice(0, 5).join(', '));
 
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);
