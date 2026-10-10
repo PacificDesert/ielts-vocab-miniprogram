@@ -9,6 +9,8 @@ Page(flip.mixin({
     img: '',
     card: {},
     ex: null,
+    exToks: [],
+    popWord: null,
     sim: [],
     dr: [],
     from: '',
@@ -54,11 +56,14 @@ Page(flip.mixin({
       wx.showToast({ title: '找不到该单词', icon: 'none' });
       return;
     }
+    const ex = word.example(it);
     this.setData({
       cur: it,
       img: word.themeImage(it.ch),
       card: word.card(it.ch, it.w, this.data.dark),
-      ex: word.example(it),
+      ex,
+      // 例句切词：每个英文词都能点开查读音和释义（与详情页一致）
+      exToks: ex ? word.exClickable(ex.en, it.w) : [],
       sim: word.similar(it),
       dr: it.dr || [],
       lv: store.status(it.w),
@@ -68,6 +73,52 @@ Page(flip.mixin({
     // 有声模式：进入拓展页读一遍这个单词（与记忆卡「读单词读音」一致）
     if (this.data.canSpeak && this.data.sound) this.speakWord(it.w, true);
   },
+
+  /**
+   * 点例句里的单词看释义。
+   * 词库里有 → 弹层显示音标/释义/例句，并可发音；
+   * 不在词库 → 只提示，不乱查。
+   */
+  onExWord(e) {
+    const i = e.currentTarget.dataset.i;
+    const tok = this.data.exToks[i];
+    if (!tok || !tok.w) return;
+    if (!tok.it) {
+      wx.showToast({ title: '「' + tok.w + '」不在本词库', icon: 'none' });
+      return;
+    }
+    const it = tok.it;
+    this.setData({
+      popWord: {
+        w: it.w,
+        ph: it.ph || '',
+        cn: word.cnText(it.cn, it.w),
+        ex: it.ex && it.ex[0] ? word.exText(it.ex[0]) : '',
+        exZh: it.ex && it.ex[1] ? it.ex[1] : ''
+      }
+    });
+  },
+
+  closePop() {
+    this.setData({ popWord: null });
+  },
+
+  /** 弹层里的发音 */
+  popSpeak() {
+    const p = this.data.popWord;
+    if (p) this.speakWord(p.w);
+  },
+
+  /** 弹层里跳到该词的详情页 */
+  popDetail() {
+    const p = this.data.popWord;
+    if (!p) return;
+    this.closePop();
+    wx.redirectTo({ url: '/pages/detail/detail?w=' + encodeURIComponent(p.w) });
+  },
+
+  /** 阻止点弹层本体时穿透关闭 */
+  noop() {},
 
   /** 点相近词：翻书式切到该词 */
   onSimilar(e) {

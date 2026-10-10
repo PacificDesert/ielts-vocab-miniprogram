@@ -798,5 +798,22 @@ ok('云函数对英文文本加 BOM', /\\uFEFF\[content\]/.test(fnJs));
 ok('云函数有超时保护', /评测超时/.test(fnJs));
 ok('语音评测云函数有 package.json', fs.existsSync(path.join(__dirname, '..', 'cloudfunctions', 'speech', 'package.json')));
 
+// 例句点词查义：**详情页和拓展页都要有**（踩过一次：只加了详情页，拓展页漏了）
+const detailWxml2 = fs.readFileSync(path.join(__dirname, '..', 'pages', 'detail', 'detail.wxml'), 'utf8');
+const detailJs2 = fs.readFileSync(path.join(__dirname, '..', 'pages', 'detail', 'detail.js'), 'utf8');
+const expandWxml2 = fs.readFileSync(path.join(__dirname, '..', 'pages', 'expand', 'expand.wxml'), 'utf8');
+const expandJs2 = fs.readFileSync(path.join(__dirname, '..', 'pages', 'expand', 'expand.js'), 'utf8');
+[['detail', detailWxml2, detailJs2], ['expand', expandWxml2, expandJs2]].forEach(([name, wx, js]) => {
+  ok(name + ' 页例句逐词可点', /exToks/.test(wx) && /catchtap="onExWord"/.test(wx));
+  ok(name + ' 页有点词弹层', /popWord/.test(wx) && /class="pop-mask"/.test(wx));
+  ok(name + ' 页 onExWord 处理', /onExWord\s*\(/.test(js));
+  ok(name + ' 页例句用 exClickable 切词', /word\.exClickable\(/.test(js));
+});
+// 预览端：详情/拓展共用 exBlock，两处都要走它
+const tpl2 = fs.readFileSync(path.join(__dirname, '..', 'preview', 'template.html'), 'utf8');
+ok('预览端 exBlock 逐词可点', /class="ex-hit"/.test(tpl2) && /data-act="exw"/.test(tpl2));
+ok('预览端详情与拓展都走 exBlock',
+  /function vDetail\(\)[\s\S]{0,900}?exBlock\(w\)/.test(tpl2) && /function vExpand\(\)[\s\S]{0,900}?exBlock\(w\)/.test(tpl2));
+
 console.log('\n' + (fails.length ? fails.length + ' 项失败，' + pass + ' 项通过' : '全部 ' + pass + ' 项通过'));
 process.exit(fails.length ? 1 : 0);
