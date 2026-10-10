@@ -8,3 +8,7 @@ tools/.cache/
 
 # 冒烟测试产物
 tools/_smoke_out.txt
+
+# Python 编译缓存
+__pycache__/
+*.pyc
